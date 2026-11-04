@@ -1,0 +1,6 @@
+cmake -S . -B build
+cmake --build build --config Release
+
+./build/tp5 5 1 50 output
+
+python3 scripts/visualizar.py output/states.txt --every 1 --fps 60 --save output/animacion4.mp4
