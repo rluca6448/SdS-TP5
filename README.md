@@ -76,16 +76,114 @@ Ejecutar desde la raíz del proyecto para que `output/` quede fuera de `build`. 
 ./build/tp5 500 42 50 output
 ```
 
-Los argumentos opcionales son cantidad de agentes, semilla, lado de habitación y carpeta de salida, en ese orden. Sus valores por defecto son `500 42 50 output`. La puerta mide 0,8 m. En Windows, ajustar la ruta del ejecutable según el generador usado.
+Los argumentos opcionales son cantidad de agentes, semilla, lado de habitación, carpeta de salida y esquema (`tsdmd` o `edmd`), en ese orden. Sus valores por defecto son `500 42 50 output tsdmd`. La puerta mide 0,8 m. En Windows, ajustar la ruta del ejecutable según el generador usado.
 
-El programa ejecuta TSDMD puro hasta retirar a todos los agentes y genera:
+Con `edmd` se aceptan dos argumentos más: la búsqueda de vecinos (`grid`, por defecto, o `allpairs`) y el intervalo de reconstrucción de la grilla en segundos (por defecto 0,05). Con `hybrid` se acepta un argumento más: la anticipación k, en pasos (por defecto 1).
+
+```sh
+./build/tp5 500 42 50 output_hybrid hybrid 1
+```
+
+```sh
+./build/tp5 500 42 50 output_edmd edmd
+```
+
+El programa ejecuta el esquema elegido hasta retirar a todos los agentes y genera:
 
 - `states.txt`: estado inicial, estados cada tres pasos (`dt2 = 0,1 s`) y estado final vacío.
-- `population.txt`: una fila por paso, incluido el inicial, con columnas `time inside active`.
+- `population.txt`: una fila por paso, incluido el inicial, con columnas `time inside active timeDriven` (la última es la cantidad de agentes que avanzaron en TS en ese paso).
 
 La carpeta se crea si no existe. Cada ejecución reemplaza esos archivos; usar carpetas diferentes para conservar realizaciones. En consola se imprimen el tiempo de evacuación y el tiempo del último retiro.
 
-Todavía faltan los esquemas EDMD e híbrido.
+Con `edmd` también se imprimen la cantidad de eventos procesados y de eventos obsoletos descartados. Con `hybrid` se imprimen las entradas a TS por predicción y por cierre de la bolsa, y la cantidad de predicciones de pares.
+
+## Esquema por eventos (EDMD)
+
+`SimulationEDMD` tiene la misma interfaz pública que `Simulation`. Los parámetros CPM de los dos motores están en `simulation/CpmParameters.h`. Las trayectorias y la predicción de eventos están en `simulation/EventPrediction`.
+
+Interpretación del CPM en tiempo continuo (alternativa B):
+
+- Cada agente está en una de tres fases, todas con fórmula cerrada: libre (radio `rmax`, rapidez `vd` hacia el target), escape (radio `rmin`, rapidez `ve`) y recuperación (`r(t) = rmin + (rmax / tau) t`, rapidez `vd ((r - rmin) / (rmax - rmin))^beta`, cuya integral es exacta). La recuperación completa dura 0,3 s.
+- El contacto se resuelve en el instante en que dos discos (o un disco y una pared) se tocan. Ambos se contraen a `rmin` y escapan durante `dt = 1/30 s` en la dirección de la suma de direcciones de separación, como en el TSDMD. **La duración del escape es una decisión propia**, porque en tiempo continuo el contacto desaparece al contraerse; se eligió `dt` porque es lo que dura el escape en el TSDMD.
+- Al terminar el escape se reevalúan los contactos: si sigue en contacto, escapa de nuevo; si no, empieza a recuperarse.
+- Los contactos simultáneos se resuelven a partir de una foto común: primero se calculan todos los conjuntos de contacto y recién después se contrae a los agentes, así el resultado no depende del orden de almacenamiento.
+- Eventos: contacto agente-agente, contacto con pared (cápsula: banda más extremos del segmento), fin de escape, fin de recuperación, cruce de la puerta (`y = 0` dentro de la abertura) y retiro (`y = -1`).
+
+Predicción: con radio fijo y movimiento rectilíneo, el contacto sale de una cuadrática con raíz estable. Durante la recuperación el movimiento no es rectilíneo y se usa avance conservador con una cota de velocidad de cierre, más bisección. La penetración máxima que puede pasar inadvertida es 1 µm.
+
+Agenda: heap de eventos con versiones. Cada evento guarda la versión de sus agentes; si cambió antes de procesarlo, se descarta. Después de cada grupo solo se reprograman los agentes cuyo tramo cambió, y ningún paso del procesamiento de un grupo recorre a los N agentes. Los agentes no se borran del vector interno; `getParticles()` devuelve los activos calculados en el instante de muestreo.
+
+Vecinos (`NeighbourSearch::CellGrid`, por defecto): la grilla del CIM se reconstruye cada Δ = 0,05 s con las posiciones de ese instante, y ningún choque entre agentes se predice más allá de la próxima reconstrucción. Como el hueco entre dos agentes se cierra a lo sumo a 2 ve + 2 rmax / tau = 4 m/s, quien pueda tocar a un agente antes de la próxima reconstrucción está a menos de `2 rmax + 4 Δ` en la reconstrucción. Esos son sus candidatos: celdas de ese lado y descarte de los que están más lejos. Al reconstruir no hay que invalidar nada, porque ningún choque de la ventana anterior pasa del instante de reconstrucción. Las paredes no usan la grilla. `NeighbourSearch::AllPairs` compara contra todos y queda como referencia.
+
+Con N = 500 y L = 50 m, la grilla es unas 7 veces más rápida que `AllPairs`, y el resultado es el mismo salvo por la divergencia caótica. Valores de Δ entre 0,02 y 0,05 s son los más rápidos; con Δ mayor hay más candidatos. Aun así, el EDMD es entre 13 y 18 veces más lento que el TSDMD: casi todos los eventos ocurren en la aglomeración de la puerta, donde cada agente tiene decenas de candidatos.
+
+Un detector aborta la corrida con un error si se procesan 100 000 grupos sin que el tiempo avance 1 ms (cascada de eventos), en lugar de agotar la memoria.
+
+`step()` no es un paso de CPM: procesa todos los eventos hasta `getTime() + dt` y calcula las posiciones en ese instante, para que la salida tenga los mismos instantes que el TSDMD.
+
+### Verificación
+
+Los programas de `tests/` no forman parte de la entrega. Se compilan con `-DTP5_BUILD_VERIFICATION=ON`:
+
+- `test_edmd_prototype`: casos analíticos, comparación entre predictores, escenarios pequeños y comparación de la agenda contra una versión de fuerza bruta.
+- `verify_edmd`: estado inicial idéntico al del TSDMD, coincidencia con el prototipo y comparación estadística TSDMD vs EDMD.
+- `overlap_diagnostic`: solapamientos y caudal en la puerta para cada esquema.
+- `benchmark_edmd check|stats|interval|scaling`: la grilla no pierde choques (sin solapamientos en ninguna muestra), grilla contra `AllPairs` en 10 semillas, barrido de Δ y escalamiento con N a densidad constante.
+
+La evacuación es caótica: una diferencia de 10⁻¹² s en un instante de contacto crece hasta cambiar la secuencia de eventos. Las comparaciones entre esquemas deben ser estadísticas.
+
+## Esquema híbrido (ED + TS)
+
+`SimulationHybrid` tiene la misma interfaz pública que los otros motores. Hay una sola bolsa de agentes TS y un reloj común, el `dt` del CPM. Cambiar de esquema no contrae, mueve ni reorienta a nadie: solo cambia cómo se calcula. Por eso la física del híbrido es la del TSDMD para cualquier anticipación k.
+
+En cada paso la bolsa se reconstruye desde el estado actual, sin arrastrar la del paso anterior:
+
+1. Entran a TS los agentes que no están recuperados (`r < rmax`) o están en contacto.
+2. Entran los agentes ED con un choque previsto (con otro ED o con una pared) dentro de `k dt`. Esos choques se predicen con los mismos predictores del EDMD y se guardan en un heap con versiones.
+3. Cierre de la bolsa: entra todo agente a 0,60 m o menos de un agente TS (`2 rmax + 2 v dt`). Más lejos no pueden tocarse durante el próximo paso. Se repite hasta que no entra nadie.
+4. Los TS que podrían salir (recuperados y sin contacto) predicen su vuelo. Si chocarían dentro de `k dt`, se quedan; si no, pasan a ED y sus predicciones se agendan.
+
+Los agentes TS siguen las reglas del TSDMD con el mismo código (`simulation/CpmRules.h`). Los contactos se buscan solo entre agentes TS. Los agentes ED vuelan en línea recta a `vd` hacia su target. La puerta y el retiro se comprueban igual para los dos, sobre el segmento recorrido en el paso, y el cambio de target ocurre al final de ese paso, como en el TSDMD.
+
+Con todos los agentes forzados a TS, el híbrido es idéntico byte a byte al TSDMD. Con N = 500 y L = 50 m, cuesta unas 1,35 veces lo que el TSDMD y es unas 12 veces más rápido que el EDMD. La fracción de agentes TS sube de 0 % al inicio a casi 100 % desde los 30 s, cuando se forma la cola en la puerta; la mayor parte de la evacuación es esa cola. La anticipación k casi no cambia el costo (de 1,14 s con k = 0 a 1,34 s con k = 32) ni la evacuación.
+
+La rama de salto largo con la bolsa vacía no está implementada: la salida se escribe en cada `dt` y la bolsa está vacía solo en los primeros instantes.
+
+`verify_hybrid check|stats|cost|scaling` (en `tests/`) verifica la equivalencia con todos en TS, la ausencia de contactos con agentes ED para k entre 0 y 8, la coincidencia tick a tick con el TSDMD hasta la divergencia caótica, la comparación estadística en 10 semillas y el costo según k y según N.
+
+## Estudios, gráficos y animaciones
+
+Tres scripts en `scripts/` (requieren `numpy`, `matplotlib` y, para MP4, FFmpeg). Se corren desde la raíz del proyecto, con `build/tp5` compilado en Release.
+
+**`correr.py`** corre los estudios con los tres esquemas y guarda cada corrida en `resultados/<estudio>/<configuración>/s<semilla>/` (`population.txt`, `salida.txt`, `resumen.json`). Las corridas ya hechas no se repiten, así que se puede cortar y retomar.
+
+```sh
+python3 scripts/correr.py base          # N=500, L=50, 10 semillas de cada esquema (híbrido con k=1)
+python3 scripts/correr.py barrido       # híbrido con k = 0 1 2 4 8 16 32
+python3 scripts/correr.py densidad      # N = 100 ... 2000 a densidad 0,2 /m²
+python3 scripts/correr.py lado          # N = 100 ... 1500 a L = 50 m
+python3 scripts/correr.py animaciones   # una corrida por esquema con estados, video y fotogramas
+python3 scripts/correr.py todo
+```
+
+Opciones útiles: `--realizaciones`, `--esquemas`, `--valores` (k), `--n`, `--n-lado`, `--velocidad`, `--fotogramas`, `--jobs` y `--rehacer`. Las corridas en lote no escriben `states.txt`. El tiempo de cómputo es el que mide `tp5` sobre `step()` (`Engine time`), sin escritura. Para los tiempos finales conviene `--jobs 1`.
+
+**`graficos.py`** lee `resultados/` y escribe en `figuras/` las figuras (PNG) y las tablas (CSV) de cada estudio: población en el tiempo con cada realización identificada, comparación de esquemas con la misma semilla, fracción TS del híbrido, tiempos de evacuación y de cómputo (media y desvío estándar), barrido de k con TSDMD y EDMD de referencia, y escalamientos con su costo relativo al TSDMD.
+
+```sh
+python3 scripts/graficos.py               # todos los estudios con resultados
+python3 scripts/graficos.py base barrido  # solo esos
+```
+
+**`animar.py`** anima un `states.txt`: a la izquierda la habitación completa y a la derecha un zoom a la puerta. En el híbrido colorea por esquema (rojo TS, azul ED); en TSDMD y EDMD, por radio. También guarda fotogramas en PNG para el informe.
+
+```sh
+TP5_STATES_EVERY=1 ./build/tp5 500 42 50 output hybrid
+python3 scripts/animar.py output/states.txt --esquema hybrid --velocidad 5 --guardar output/hibrido.mp4
+python3 scripts/animar.py output/states.txt --esquema hybrid --fotogramas 10 30 100 --carpeta-fotogramas output/fotos
+```
+
+`TP5_STATES_EVERY` fija cada cuántos pasos de `dt` se escribe `states.txt` (por defecto 1; 3 equivale a `dt2 = 0,1 s`; 0 no lo escribe). `scripts/visualizar.py` sigue disponible.
 
 ## Animación
 

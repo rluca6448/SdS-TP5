@@ -1,5 +1,6 @@
 #pragma once
 
+#include "simulation/CpmParameters.h"
 #include "types/Board.h"
 #include "types/Particle.h"
 #include "neighbours/Grid.h"
@@ -30,13 +31,13 @@ private:
     std::vector<types::Particle> particles;
     double time = 0.0;
     double evacuationTime = 0.0;
-    static constexpr double maxRadius = 0.25;
-    static constexpr double minRadius = 0.10;
-    static constexpr double desiredSpeed = 1.5;
-    static constexpr double escapeSpeed = desiredSpeed;
-    static constexpr double tau = 0.5;
-    static constexpr double beta = 0.9;
-    static constexpr double dt = minRadius / (2 * escapeSpeed);
+    static constexpr double maxRadius = cpm::maxRadius;
+    static constexpr double minRadius = cpm::minRadius;
+    static constexpr double desiredSpeed = cpm::desiredSpeed;
+    static constexpr double escapeSpeed = cpm::escapeSpeed;
+    static constexpr double tau = cpm::tau;
+    static constexpr double beta = cpm::beta;
+    static constexpr double dt = cpm::dt;
 };
 
 }

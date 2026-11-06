@@ -18,6 +18,7 @@ struct Vector2D {
         return *this;
     }
 
+    double dot(const Vector2D& other) const { return x * other.x + y * other.y; }
     double norm() const { return std::hypot(x, y); }
 
     Vector2D normalized() const {
