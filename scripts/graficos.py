@@ -10,6 +10,10 @@ Convenciones:
   - Las curvas temporales muestran realizaciones identificadas por su semilla, sin promediar.
   - En los escalares, el punto es la media de las M realizaciones y la barra es
     el DESVÍO ESTÁNDAR entre realizaciones.
+  - Guía de presentaciones: sin títulos ni notas dentro de las figuras (los
+    parámetros fijos van al costado, en la diapositiva), ejes en palabras con
+    unidades MKS entre paréntesis, letra >= 20, potencias de 10 con supraíndice
+    y tablas con las cifras significativas del desvío.
   - El tiempo de cómputo es el del motor (sin escritura de archivos).
 """
 
@@ -26,7 +30,6 @@ import numpy as np  # noqa: E402
 
 import comun  # noqa: E402
 
-LEYENDA_BARRAS = "barras: desvío estándar entre realizaciones"
 
 
 def guardar(figura, nombre, carpeta):
@@ -42,12 +45,6 @@ def agrupar(resumenes, *claves):
     for resumen in resumenes:
         grupos[tuple(resumen[clave] for clave in claves)].append(resumen)
     return grupos
-
-
-def nota(eje, texto):
-    """Aclaración debajo del eje, para no tapar datos."""
-    eje.annotate(texto, xy=(1, 0), xycoords="axes fraction", xytext=(0, -58), textcoords="offset points",
-                 ha="right", va="top", fontsize=11, color="dimgray")
 
 
 def ticks_n(eje, ns):
@@ -80,16 +77,13 @@ def graficos_base(resumenes, carpeta):
     for esquema in esquemas:
         corridas = sorted(por_esquema[(esquema,)], key=lambda r: r["semilla"])
         figura, eje = plt.subplots(figsize=(10, 6))
-        mapa = matplotlib.colormaps["tab10"]
-        for i, corrida in enumerate(corridas):
+        for corrida in corridas:
             t, dentro, _, _ = comun.leer_poblacion(Path(corrida["carpeta"]) / "population.txt")
-            eje.plot(t, dentro, color=mapa(i % 10), linewidth=1.4, label=f"semilla {corrida['semilla']}")
-        eje.set_xlabel("tiempo [s]")
-        eje.set_ylabel("agentes dentro de la habitación")
-        eje.set_title(f"{comun.NOMBRES[esquema]}: población (N = 500, L = 50 m)")
+            eje.plot(t, dentro, color=comun.COLORES[esquema], linewidth=1.2, alpha=0.6)
+        eje.set_xlabel("Tiempo (s)")
+        eje.set_ylabel("Agentes dentro de la habitación")
         eje.set_xlim(left=0)
         eje.set_ylim(bottom=0)
-        eje.legend(ncol=2, fontsize=11)
         guardar(figura, f"base_poblacion_{esquema}", carpeta)
 
     # Comparación de los tres esquemas con la misma semilla.
@@ -101,9 +95,8 @@ def graficos_base(resumenes, carpeta):
             corrida = next(r for r in por_esquema[(esquema,)] if r["semilla"] == semilla)
             t, dentro, _, _ = comun.leer_poblacion(Path(corrida["carpeta"]) / "population.txt")
             eje.plot(t, dentro, color=comun.COLORES[esquema], label=comun.NOMBRES[esquema])
-        eje.set_xlabel("tiempo [s]")
-        eje.set_ylabel("agentes dentro de la habitación")
-        eje.set_title(f"Población con el mismo estado inicial (semilla {semilla})")
+        eje.set_xlabel("Tiempo (s)")
+        eje.set_ylabel("Agentes dentro de la habitación")
         eje.set_xlim(left=0)
         eje.set_ylim(bottom=0)
         eje.legend()
@@ -113,18 +106,16 @@ def graficos_base(resumenes, carpeta):
     if ("hybrid",) in por_esquema:
         corridas = sorted(por_esquema[("hybrid",)], key=lambda r: r["semilla"])
         figura, eje = plt.subplots(figsize=(10, 6))
-        mapa = matplotlib.colormaps["tab10"]
-        for i, corrida in enumerate(corridas):
+        for corrida in corridas:
             t, _, activos, ts = comun.leer_poblacion(Path(corrida["carpeta"]) / "population.txt")
-            validos = activos > 0
-            eje.plot(t[validos], ts[validos] / activos[validos], color=mapa(i % 10), linewidth=1.2,
-                     label=f"semilla {corrida['semilla']}")
-        eje.set_xlabel("tiempo [s]")
-        eje.set_ylabel("fracción de agentes TS")
-        eje.set_title("Híbrido: fracción de agentes que avanzan por pasos")
+            # Se omite t = 0: el estado inicial marca a todos como TS antes de clasificar.
+            validos = (activos > 0) & (t > 0)
+            eje.plot(t[validos], ts[validos] / activos[validos], color=comun.COLORES["hybrid"],
+                     linewidth=1.2, alpha=0.6)
+        eje.set_xlabel("Tiempo (s)")
+        eje.set_ylabel("Fracción de agentes por pasos")
         eje.set_xlim(left=0)
         eje.set_ylim(0, 1.03)
-        eje.legend(ncol=2, fontsize=11, loc="lower right")
         guardar(figura, "base_fraccion_ts", carpeta)
 
     # Escalares: tiempo de evacuación y tiempo de cómputo.
@@ -136,15 +127,15 @@ def graficos_base(resumenes, carpeta):
         mo = comun.media_y_desvio([r["t_motor"] for r in corridas])
         fr = comun.media_y_desvio([r["fraccion_ts_media"] for r in corridas])
         medidas[esquema] = (ev, mo)
-        filas.append([comun.NOMBRES[esquema], len(corridas), f"{ev[0]:.2f}", f"{ev[1]:.2f}",
-                      f"{mo[0]:.3f}", f"{mo[1]:.3f}", f"{fr[0]:.3f}"])
+        filas.append([comun.NOMBRES[esquema], len(corridas), *comun.con_error(*ev),
+                      *comun.con_error(*mo), *comun.con_error(*fr)])
     escribir_tabla(carpeta / "base_resumen.csv", filas,
                    ["esquema", "M", "t_evac_media_s", "t_evac_desvio_s", "t_computo_media_s",
-                    "t_computo_desvio_s", "fraccion_ts_media"])
+                    "t_computo_desvio_s", "fraccion_ts_media", "fraccion_ts_desvio"])
 
     for indice, (nombre, etiqueta, logaritmica) in enumerate([
-            ("base_evacuacion", "tiempo de evacuación [s]", False),
-            ("base_tiempo_computo", "tiempo de cómputo [s]", True)]):
+            ("base_evacuacion", "Tiempo de evacuación (s)", False),
+            ("base_tiempo_computo", "Tiempo de cómputo (s)", True)]):
         figura, eje = plt.subplots(figsize=(8, 6))
         for x, esquema in enumerate(esquemas):
             media, desvio = medidas[esquema][indice]
@@ -155,8 +146,6 @@ def graficos_base(resumenes, carpeta):
         eje.set_ylabel(etiqueta)
         if logaritmica:
             eje.set_yscale("log")
-        eje.set_title(f"N = 500, L = 50 m, M = {len(por_esquema[(esquemas[0],)])}")
-        nota(eje, LEYENDA_BARRAS)
         guardar(figura, nombre, carpeta)
 
 
@@ -191,8 +180,8 @@ def graficos_barrido(resumenes, base, carpeta):
     m = len(por_k[(ks[0],)])
 
     escribir_tabla(carpeta / "barrido_resumen.csv",
-                   [[k, len(por_k[(k,)]), f"{e[0]:.2f}", f"{e[1]:.2f}", f"{c[0]:.3f}", f"{c[1]:.3f}",
-                     f"{f[0]:.3f}", f"{f[1]:.3f}"] for k, e, c, f in zip(ks, evac, motor, fraccion)],
+                   [[k, len(por_k[(k,)]), *comun.con_error(*e), *comun.con_error(*c), *comun.con_error(*f)]
+                    for k, e, c, f in zip(ks, evac, motor, fraccion)],
                    ["k", "M", "t_evac_media_s", "t_evac_desvio_s", "t_computo_media_s", "t_computo_desvio_s",
                     "fraccion_ts_media", "fraccion_ts_desvio"])
 
@@ -205,18 +194,16 @@ def graficos_barrido(resumenes, base, carpeta):
                 linea_referencia(eje, esquema, medidas[indice_ref][0])
         eje.set_xscale("symlog", linthresh=1)
         eje.set_xticks(ks, [str(k) for k in ks])
-        eje.set_xlabel("anticipación k [pasos de dt]")
+        eje.set_xlabel("Anticipación (pasos temporales)")
         eje.set_ylabel(etiqueta)
         if logaritmica:
             eje.set_yscale("log")
-        eje.set_title(f"Híbrido según k (N = 500, L = 50 m, M = {m})")
         eje.legend()
-        nota(eje, LEYENDA_BARRAS)
         guardar(figura, nombre, carpeta)
 
-    figura_k(evac, "tiempo de evacuación [s]", "barrido_evacuacion", indice_ref=0)
-    figura_k(motor, "tiempo de cómputo [s]", "barrido_tiempo_computo", indice_ref=1, logaritmica=True)
-    figura_k(fraccion, "fracción media de agentes TS", "barrido_fraccion_ts")
+    figura_k(evac, "Tiempo de evacuación (s)", "barrido_evacuacion", indice_ref=0)
+    figura_k(motor, "Tiempo de cómputo (s)", "barrido_tiempo_computo", indice_ref=1, logaritmica=True)
+    figura_k(fraccion, "Fracción media de agentes por pasos", "barrido_fraccion_ts")
 
 
 # ---------------------------------------------------------------------------
@@ -225,7 +212,6 @@ def graficos_barrido(resumenes, base, carpeta):
 
 def graficos_escalamiento(resumenes, carpeta, estudio):
     print(f"[{estudio}]")
-    titulo = "densidad constante 0,2 /m²" if estudio == "densidad" else "L = 50 m constante"
     por_config = agrupar(resumenes, "esquema", "N")
     esquemas = [e for e in comun.ESQUEMAS if any(c[0] == e for c in por_config)]
     datos = {}
@@ -238,14 +224,14 @@ def graficos_escalamiento(resumenes, carpeta, estudio):
         for n, e, c in zip(ns, evac, motor):
             lado = por_config[(esquema, n)][0]["L"]
             filas.append([comun.NOMBRES[esquema], n, f"{lado:.2f}", f"{n / lado ** 2:.3f}",
-                          len(por_config[(esquema, n)]), f"{e[0]:.2f}", f"{e[1]:.2f}", f"{c[0]:.3f}", f"{c[1]:.3f}"])
+                          len(por_config[(esquema, n)]), *comun.con_error(*e), *comun.con_error(*c)])
     escribir_tabla(carpeta / f"{estudio}_resumen.csv", filas,
                    ["esquema", "N", "L_m", "densidad_m2", "M", "t_evac_media_s", "t_evac_desvio_s",
                     "t_computo_media_s", "t_computo_desvio_s"])
 
     for indice, (nombre, etiqueta, logaritmica) in enumerate([
-            (f"{estudio}_evacuacion", "tiempo de evacuación [s]", False),
-            (f"{estudio}_tiempo_computo", "tiempo de cómputo [s]", True)]):
+            (f"{estudio}_evacuacion", "Tiempo de evacuación (s)", False),
+            (f"{estudio}_tiempo_computo", "Tiempo de cómputo (s)", True)]):
         figura, eje = plt.subplots(figsize=(10, 6))
         for esquema in esquemas:
             ns, evac, motor = datos[esquema]
@@ -253,15 +239,13 @@ def graficos_escalamiento(resumenes, carpeta, estudio):
             eje.errorbar(ns, [v[0] for v in valores], yerr=[v[1] for v in valores],
                          fmt="-" + comun.MARCADORES[esquema], color=comun.COLORES[esquema], capsize=5,
                          label=comun.NOMBRES[esquema])
-        eje.set_xlabel("N (agentes)")
+        eje.set_xlabel("Número de agentes")
         eje.set_ylabel(etiqueta)
         if logaritmica:
             eje.set_xscale("log")
             eje.set_yscale("log")
             ticks_n(eje, sorted({n for e in esquemas for n in datos[e][0]}))
-        eje.set_title(f"Escalamiento con N, {titulo}")
         eje.legend()
-        nota(eje, LEYENDA_BARRAS)
         guardar(figura, nombre, carpeta)
 
     # Costo relativo al TSDMD, con la misma N.
@@ -281,9 +265,8 @@ def graficos_escalamiento(resumenes, carpeta, estudio):
         eje.set_xscale("log")
         eje.set_yscale("log")
         ticks_n(eje, ns_ts)
-        eje.set_xlabel("N (agentes)")
-        eje.set_ylabel("tiempo de cómputo / tiempo del TSDMD")
-        eje.set_title(f"Costo relativo, {titulo}")
+        eje.set_xlabel("Número de agentes")
+        eje.set_ylabel("Costo relativo al TSDMD")
         eje.legend()
         guardar(figura, f"{estudio}_costo_relativo", carpeta)
 

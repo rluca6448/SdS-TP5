@@ -27,16 +27,17 @@ Y_RETIRO = -1.0       # [m]
 
 
 def estilo_figuras():
-    """Letras grandes y legibles en una diapositiva."""
+    """Guía de presentaciones: letra >= 20 y potencias de 10 con supraíndice."""
     import matplotlib.pyplot as plt
 
     plt.rcParams.update({
-        "font.size": 15,
-        "axes.titlesize": 17,
-        "axes.labelsize": 17,
-        "xtick.labelsize": 14,
-        "ytick.labelsize": 14,
-        "legend.fontsize": 13,
+        "font.size": 20,
+        "axes.titlesize": 20,
+        "axes.labelsize": 22,
+        "xtick.labelsize": 20,
+        "ytick.labelsize": 20,
+        "legend.fontsize": 20,
+        "axes.formatter.use_mathtext": True,   # ×10ⁿ en vez de 1e3
         "lines.linewidth": 2.0,
         "lines.markersize": 8,
         "figure.dpi": 100,
@@ -71,6 +72,17 @@ def leer_resumenes(raiz=RESULTADOS):
         resumen["carpeta"] = str(path.parent)
         resumenes.append(resumen)
     return resumenes
+
+
+def con_error(media, error):
+    """(media, error) como texto con las cifras significativas del error (una cifra)."""
+    if not np.isfinite(error) or error <= 0:
+        return f"{media:g}", f"{error:g}"
+    decimales = -int(np.floor(np.log10(error)))
+    error = round(error, decimales)
+    decimales = -int(np.floor(np.log10(error)))   # 0,96 -> 1 cambia de orden
+    formato = f"{{:.{max(decimales, 0)}f}}"
+    return formato.format(round(media, decimales)), formato.format(error)
 
 
 def media_y_desvio(valores):

@@ -103,27 +103,26 @@ class Dibujo:
                 eje.plot(x, y, color="black", linewidth=2.5, solid_capstyle="butt")
             eje.axhline(comun.Y_RETIRO, color="gray", linestyle="--", linewidth=1)
             eje.set_aspect("equal")
-            eje.set_xlabel("x [m]")
-            eje.set_ylabel("y [m]")
+            eje.set_xlabel("Posición horizontal (m)")
+            eje.set_ylabel("Posición vertical (m)")
 
         margen = 0.02 * lado
         self.ejes[0].set_xlim(-margen, lado + margen)
         self.ejes[0].set_ylim(comun.Y_RETIRO - margen, lado + margen)
-        self.ejes[0].set_title("Habitación completa")
         x0, x1 = centro - zoom, centro + zoom
         y0, y1 = comun.Y_RETIRO - 0.4, 1.3 * zoom
         self.ejes[1].set_xlim(x0, x1)
         self.ejes[1].set_ylim(y0, y1)
-        self.ejes[1].set_title("Zoom a la puerta")
         self.ejes[1].text(x1 - 0.05 * (x1 - x0), comun.Y_RETIRO + 0.05, "retiro (y = −1 m)",
-                          ha="right", va="bottom", color="gray", fontsize=12)
+                          ha="right", va="bottom", color="gray", fontsize=20)
         self.ejes[0].add_patch(Rectangle((x0, y0), x1 - x0, y1 - y0, fill=False, edgecolor="black",
                                          linewidth=1.2, linestyle=":"))
 
         if color == "esquema":
-            self.ejes[1].legend(handles=[Patch(color=comun.COLOR_TS, label="Por pasos (TS)"),
-                                         Patch(color=comun.COLOR_ED, label="Por eventos (ED)")],
-                                loc="upper right", framealpha=0.9)
+            # Fuera de los ejes, para no tapar agentes.
+            self.figura.legend(handles=[Patch(color=comun.COLOR_TS, label="Por pasos (TS)"),
+                                        Patch(color=comun.COLOR_ED, label="Por eventos (ED)")],
+                               loc="outside lower center", ncol=2)
         else:
             import matplotlib.cm as cm
             from matplotlib.colors import Normalize
@@ -132,7 +131,7 @@ class Dibujo:
             self.mapa = matplotlib.colormaps["viridis"]
             barra = self.figura.colorbar(cm.ScalarMappable(norm=self.normal, cmap=self.mapa),
                                          ax=self.ejes, shrink=0.75, pad=0.01)
-            barra.set_label("radio [m]")
+            barra.set_label("Radio (m)")
         self.titulo = self.figura.suptitle("", fontsize=18)
         self.colecciones = []
 
