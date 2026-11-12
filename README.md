@@ -78,7 +78,7 @@ Ejecutar desde la raíz del proyecto para que `output/` quede fuera de `build`. 
 
 Los argumentos opcionales son cantidad de agentes, semilla, lado de habitación, carpeta de salida y esquema (`tsdmd` o `edmd`), en ese orden. Sus valores por defecto son `500 42 50 output tsdmd`. La puerta mide 0,8 m. En Windows, ajustar la ruta del ejecutable según el generador usado.
 
-Con `edmd` se aceptan dos argumentos más: la búsqueda de vecinos (`grid`, por defecto, o `allpairs`) y el intervalo de reconstrucción de la grilla en segundos (por defecto 0,05). Con `hybrid` se acepta un argumento más: la anticipación k, en pasos (por defecto 1).
+Con `edmd` se aceptan dos argumentos más: la búsqueda de vecinos (`grid`, por defecto, o `allpairs`) y el intervalo de reconstrucción de la grilla en segundos (por defecto 0,05). Con `hybrid` se aceptan dos argumentos más: la anticipación k, en pasos (por defecto 1), y la distancia de cierre d* en metros (por defecto y mínimo 0,6 m: con menos, un agente ED podría tocar a uno TS sin detectarse). Entra a TS todo agente a d* o menos de un agente TS.
 
 ```sh
 ./build/tp5 500 42 50 output_hybrid hybrid 1
@@ -160,8 +160,9 @@ Tres scripts en `scripts/` (requieren `numpy`, `matplotlib` y, para MP4, FFmpeg)
 ```sh
 python3 scripts/correr.py base          # N=500, L=50, 10 semillas de cada esquema (híbrido con k=1)
 python3 scripts/correr.py barrido       # híbrido con k = 0 1 2 4 8 16 32
+python3 scripts/correr.py umbral        # híbrido con d* = 0,6 1 2 4 8 m, para N = 10 100 500 a L = 50 m
 python3 scripts/correr.py densidad      # N = 100 ... 2000 a densidad 0,2 /m²
-python3 scripts/correr.py lado          # N = 100 ... 1500 a L = 50 m
+python3 scripts/correr.py lado          # N = 5 ... 1500 a L = 50 m
 python3 scripts/correr.py animaciones   # una corrida por esquema con estados, video y fotogramas
 python3 scripts/correr.py todo
 ```

@@ -15,23 +15,25 @@ namespace simulation {
 
 // Híbrido ED + TS con una sola bolsa TS y el reloj común del CPM (dt = 1/30 s).
 //  - TS: agentes en contacto, recuperándose, con un choque previsto dentro de
-//    k * dt, o a menos de la distancia segura de otro agente TS. Siguen
+//    k * dt, o a distancia de cierre d* o menos de otro agente TS. Siguen
 //    exactamente las reglas del TSDMD.
 //  - ED: el resto. Vuelan en línea recta a vd hacia su target y sus choques
 //    futuros se predicen; no se les buscan contactos tick a tick.
 // Cambiar de esquema no contrae, mueve ni reorienta a nadie: solo cambia cómo
-// se calcula. Por eso la física es la del TSDMD para cualquier k >= 0.
+// se calcula. Por eso la física es la del TSDMD para cualquier k >= 0 y d* >= safeDistance.
 class SimulationHybrid {
 public:
     static constexpr int defaultAnticipation = 1;
 
-    // Si un agente ED está a esta distancia o menos de uno TS, entra a TS: más
-    // lejos no pueden tocarse durante el próximo paso.
+    // Distancia de cierre mínima: si un agente ED está a esta distancia o menos de
+    // uno TS, debe entrar a TS, porque podrían tocarse durante el próximo paso.
+    // La distancia de cierre d* es configurable, pero nunca menor que esta.
     static constexpr double safeDistance =
         2 * cpm::maxRadius + 2 * std::max(cpm::desiredSpeed, cpm::escapeSpeed) * cpm::dt;   // 0,60 m
 
     SimulationHybrid(int particleCount = 500, unsigned seed = 42, types::Board board = {},
-                     int anticipation = defaultAnticipation, bool forceTimeDriven = false);
+                     int anticipation = defaultAnticipation, bool forceTimeDriven = false,
+                     double closureDistance = safeDistance);
 
     void step();
 
@@ -104,9 +106,10 @@ private:
 
     types::Board board;
     int anticipation;
+    double closureDistance;             // d*: entra a TS quien esté a d* o menos de un TS
     bool forceTimeDriven;
     neighbours::Grid contactGrid;       // celdas de 2 rmax, igual que el TSDMD
-    neighbours::Grid boundaryGrid;      // celdas de safeDistance, para el cierre de la bolsa
+    neighbours::Grid boundaryGrid;      // celdas de closureDistance, para el cierre de la bolsa
     std::vector<types::Particle> particles;
     std::vector<Flight> flights;        // paralelo a particles; vale para los agentes ED
     std::vector<int> indexOf;           // id -> índice en particles, o -1 si se retiró

@@ -3,6 +3,8 @@
 Estudios (cada uno se puede correr por separado):
   base         N=500, L=50 m, M realizaciones de cada esquema (híbrido con k=1)
   barrido      híbrido con N=500, L=50 m para varios k (TSDMD y EDMD de referencia: estudio base)
+  umbral       híbrido con L=50 m para varias distancias de cierre d* (umbral ED -> TS),
+               con TSDMD y EDMD de referencia para cada N
   densidad     escalamiento con N a densidad constante 0,2 /m2 (L = sqrt(N / 0,2))
   lado         escalamiento con N a L = 50 m constante
   animaciones  una corrida de cada esquema con estados, más su video y fotogramas
@@ -18,6 +20,7 @@ es el del motor (solo step()), medido por el programa: no incluye escritura.
 Ejemplos:
   python3 scripts/correr.py base
   python3 scripts/correr.py barrido --valores 0 1 2 4 8 16 32
+  python3 scripts/correr.py umbral --distancias 0.6 1 2 4 8 --n-umbral 10 100 500
   python3 scripts/correr.py densidad --n 100 200 500 1000 2000 --realizaciones 5
   python3 scripts/correr.py animaciones --velocidad 5
 """
@@ -35,10 +38,15 @@ from pathlib import Path
 import comun
 
 
-def configuracion(esquema, n, lado, k):
+D_MINIMA = 0.6   # [m] distancia de cierre por defecto del híbrido (safeDistance)
+
+
+def configuracion(esquema, n, lado, k, d=D_MINIMA):
     nombre = f"{esquema}_N{n}_L{lado:g}"
     if esquema == "hybrid":
         nombre += f"_k{k}"
+        if d != D_MINIMA:   # así las corridas anteriores (d* = 0,6 m) siguen valiendo
+            nombre += f"_d{d:g}"
     return nombre
 
 
@@ -53,7 +61,7 @@ def leer_salida(texto):
     return valores
 
 
-def correr_una(ejecutable, carpeta, esquema, n, lado, semilla, k, cada_estados, rehacer):
+def correr_una(ejecutable, carpeta, esquema, n, lado, semilla, k, cada_estados, rehacer, d=D_MINIMA):
     """Corre una simulación. Devuelve (resumen, si se ejecutó ahora)."""
     resumen_path = carpeta / "resumen.json"
     if resumen_path.exists() and not rehacer:
@@ -63,7 +71,7 @@ def correr_una(ejecutable, carpeta, esquema, n, lado, semilla, k, cada_estados, 
     carpeta.mkdir(parents=True, exist_ok=True)
     comando = [str(ejecutable), str(n), str(semilla), f"{lado:g}", str(carpeta), esquema]
     if esquema == "hybrid":
-        comando.append(str(k))
+        comando += [str(k), f"{d:g}"]
     entorno = dict(os.environ, TP5_STATES_EVERY=str(cada_estados))
     inicio = time.perf_counter()
     proceso = subprocess.run(comando, capture_output=True, text=True, env=entorno)
@@ -79,6 +87,7 @@ def correr_una(ejecutable, carpeta, esquema, n, lado, semilla, k, cada_estados, 
         "N": n,
         "L": lado,
         "k": k if esquema == "hybrid" else None,
+        "d": d if esquema == "hybrid" else None,
         "semilla": semilla,
         "t_evacuacion": valores.get("evacuation_time"),
         "t_ultimo_retiro": valores.get("last_removal_time"),
@@ -94,13 +103,15 @@ def correr_una(ejecutable, carpeta, esquema, n, lado, semilla, k, cada_estados, 
 
 
 def correr_lote(args, estudio, corridas):
-    """corridas: lista de (esquema, n, lado, k). Se corren M semillas de cada una."""
+    """corridas: lista de (esquema, n, lado, k) o (esquema, n, lado, k, d). Se corren M semillas de cada una."""
     tareas = []
-    for esquema, n, lado, k in corridas:
+    for corrida in corridas:
+        esquema, n, lado, k = corrida[:4]
+        d = corrida[4] if len(corrida) > 4 else D_MINIMA
         for r in range(args.realizaciones):
             semilla = args.semilla_inicial + r
-            carpeta = args.resultados / estudio / configuracion(esquema, n, lado, k) / f"s{semilla}"
-            tareas.append((esquema, n, lado, k, semilla, carpeta))
+            carpeta = args.resultados / estudio / configuracion(esquema, n, lado, k, d) / f"s{semilla}"
+            tareas.append((esquema, n, lado, k, d, semilla, carpeta))
 
     print(f"[{estudio}] {len(tareas)} corridas ({args.jobs} en paralelo)")
     if args.jobs > 1:
@@ -109,16 +120,16 @@ def correr_lote(args, estudio, corridas):
     hechas = 0
     with ThreadPoolExecutor(max_workers=args.jobs) as grupo:
         futuros = {
-            grupo.submit(correr_una, args.ejecutable, carpeta, esquema, n, lado, semilla, k, 0, args.rehacer):
-                (esquema, n, lado, k, semilla)
-            for esquema, n, lado, k, semilla, carpeta in tareas
+            grupo.submit(correr_una, args.ejecutable, carpeta, esquema, n, lado, semilla, k, 0, args.rehacer, d):
+                (esquema, n, lado, k, d, semilla)
+            for esquema, n, lado, k, d, semilla, carpeta in tareas
         }
         for futuro in as_completed(futuros):
-            esquema, n, lado, k, semilla = futuros[futuro]
+            esquema, n, lado, k, d, semilla = futuros[futuro]
             resumen, ejecutada = futuro.result()
             hechas += 1
             estado = "" if ejecutada else " (ya estaba)"
-            etiqueta = comun.NOMBRES[esquema] + (f" k={k}" if esquema == "hybrid" else "")
+            etiqueta = comun.NOMBRES[esquema] + (f" k={k} d={d:g}" if esquema == "hybrid" else "")
             print(f"  [{hechas}/{len(tareas)}] {etiqueta:12s} N={n:<5d} L={lado:<6g} semilla {semilla}: "
                   f"evacuación {resumen['t_evacuacion']:8.2f} s, motor {resumen['t_motor']:8.2f} s{estado}",
                   flush=True)
@@ -134,6 +145,14 @@ def estudio_base(args):
 def estudio_barrido(args):
     corridas = [("hybrid", 500, 50.0, k) for k in args.valores]
     correr_lote(args, "barrido", corridas)
+
+
+def estudio_umbral(args):
+    corridas = []
+    for n in args.n_umbral:
+        corridas += [(esquema, n, 50.0, args.k) for esquema in ("tsdmd", "edmd") if esquema in args.esquemas]
+        corridas += [("hybrid", n, 50.0, args.k, d) for d in args.distancias]
+    correr_lote(args, "umbral", corridas)
 
 
 def estudio_densidad(args):
@@ -167,7 +186,7 @@ def estudio_animaciones(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("estudio", choices=["base", "barrido", "densidad", "lado", "animaciones", "todo"])
+    parser.add_argument("estudio", choices=["base", "barrido", "umbral", "densidad", "lado", "animaciones", "todo"])
     parser.add_argument("--ejecutable", type=Path, default=comun.EJECUTABLE)
     parser.add_argument("--resultados", type=Path, default=comun.RESULTADOS)
     parser.add_argument("--figuras", type=Path, default=comun.FIGURAS, help="Destino de videos y fotogramas")
@@ -179,7 +198,11 @@ def main():
                         help="Valores de k del barrido")
     parser.add_argument("--n", type=int, nargs="+", default=[100, 200, 500, 1000, 2000],
                         help="N del escalamiento a densidad constante")
-    parser.add_argument("--n-lado", type=int, nargs="+", default=[100, 200, 500, 1000, 1500],
+    parser.add_argument("--distancias", type=float, nargs="+", default=[0.6, 1, 2, 4, 8],
+                        help="Distancias de cierre d* del estudio umbral [m] (mínimo 0,6)")
+    parser.add_argument("--n-umbral", type=int, nargs="+", default=[10, 100, 500],
+                        help="N del estudio umbral (L = 50 m)")
+    parser.add_argument("--n-lado", type=int, nargs="+", default=[5, 10, 20, 50, 100, 200, 500, 1000, 1500],
                         help="N del escalamiento a L = 50 m")
     parser.add_argument("--n-animacion", type=int, default=500)
     parser.add_argument("--semilla-animacion", type=int, default=42)
@@ -196,6 +219,7 @@ def main():
     estudios = {
         "base": estudio_base,
         "barrido": estudio_barrido,
+        "umbral": estudio_umbral,
         "densidad": estudio_densidad,
         "lado": estudio_lado,
         "animaciones": estudio_animaciones,

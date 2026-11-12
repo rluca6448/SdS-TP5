@@ -102,7 +102,8 @@ int main(int argc, char* argv[]) {
                   << "Grid rebuilds: " << simulation.getRebuilds() << '\n';
     } else if (scheme == "hybrid") {
         const int anticipation = argc > 6 ? std::stoi(argv[6]) : simulation::SimulationHybrid::defaultAnticipation;
-        simulation::SimulationHybrid simulation(particleCount, seed, board, anticipation);
+        const double closureDistance = argc > 7 ? std::stod(argv[7]) : simulation::SimulationHybrid::safeDistance;
+        simulation::SimulationHybrid simulation(particleCount, seed, board, anticipation, false, closureDistance);
         run(simulation, outputDirectory, outputEverySteps);
         std::cout << "Predicted entries to TS: " << simulation.getPredictedEntries() << '\n'
                   << "Boundary entries to TS: " << simulation.getBoundaryEntries() << '\n'

@@ -3,13 +3,18 @@
 
 #include <cmath>
 #include <random>
+#include <stdexcept>
 
 namespace simulation {
 
 SimulationHybrid::SimulationHybrid(int particleCount, unsigned seed, types::Board board,
-                                   int anticipation, bool forceTimeDriven)
-    : board(board), anticipation(anticipation), forceTimeDriven(forceTimeDriven),
-      contactGrid(board.getSide(), 2 * cpm::maxRadius), boundaryGrid(board.getSide(), safeDistance) {
+                                   int anticipation, bool forceTimeDriven, double closureDistance)
+    : board(board), anticipation(anticipation), closureDistance(closureDistance), forceTimeDriven(forceTimeDriven),
+      contactGrid(board.getSide(), 2 * cpm::maxRadius), boundaryGrid(board.getSide(), closureDistance) {
+    // Con d* < safeDistance un agente ED podría tocar a uno TS sin que nadie lo detecte.
+    if (closureDistance < safeDistance) {
+        throw std::invalid_argument("La distancia de cierre no puede ser menor que safeDistance (0.6 m).");
+    }
     initializeParticles(particleCount, seed);
     flights.resize(particles.size());
     indexOf.resize(particles.size());
@@ -270,14 +275,14 @@ void SimulationHybrid::markTimeDriven(std::size_t i, std::vector<char>& timeDriv
     ++counter;
 }
 
-// Recorre la bolsa desde members[start] e incorpora a quien esté a safeDistance o
+// Recorre la bolsa desde members[start] e incorpora a quien esté a closureDistance o
 // menos de algún miembro, hasta que no entre nadie más.
 void SimulationHybrid::includeNeighbours(std::vector<char>& timeDriven, std::vector<std::size_t>& members,
                                          std::size_t start, std::vector<char>& flying) {
     for (std::size_t k = start; k < members.size(); ++k) {
         const types::Vector2D position = particles[members[k]].getPosition();
         for (std::size_t c : boundaryGrid.getCandidates(position)) {
-            if (!timeDriven[c] && (particles[c].getPosition() - position).norm() <= safeDistance) {
+            if (!timeDriven[c] && (particles[c].getPosition() - position).norm() <= closureDistance) {
                 markTimeDriven(c, timeDriven, members, flying, boundaryEntries);
             }
         }

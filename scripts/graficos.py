@@ -2,6 +2,7 @@
 
   python3 scripts/graficos.py               todos los estudios que tengan resultados
   python3 scripts/graficos.py base barrido  solo esos
+  python3 scripts/graficos.py umbral        híbrido según la distancia de cierre d*, una figura por N
 
 Las figuras van a figuras/ (PNG) y las tablas a figuras/*.csv.
 
@@ -23,6 +24,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import matplotlib
+import matplotlib.ticker
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
@@ -169,41 +171,60 @@ def linea_referencia(eje, esquema, media):
                 label=f"{comun.NOMBRES[esquema]} (media)")
 
 
-def graficos_barrido(resumenes, base, carpeta):
-    print("[barrido]")
-    por_k = agrupar(resumenes, "k")
-    ks = sorted(k for (k,) in por_k)
-    refs = referencias(base)
-    evac = [comun.media_y_desvio([r["t_evacuacion"] for r in por_k[(k,)]]) for k in ks]
-    motor = [comun.media_y_desvio([r["t_motor"] for r in por_k[(k,)]]) for k in ks]
-    fraccion = [comun.media_y_desvio([r["fraccion_ts_media"] for r in por_k[(k,)]]) for k in ks]
-    m = len(por_k[(ks[0],)])
+def barrido_parametro(resumenes, refs, carpeta, prefijo, clave, etiqueta_x, escala_x):
+    """Tabla y figuras del híbrido en función de un parámetro (k o d*), con TSDMD y EDMD de referencia."""
+    por_valor = agrupar(resumenes, clave)
+    xs = sorted(x for (x,) in por_valor)
+    evac = [comun.media_y_desvio([r["t_evacuacion"] for r in por_valor[(x,)]]) for x in xs]
+    motor = [comun.media_y_desvio([r["t_motor"] for r in por_valor[(x,)]]) for x in xs]
+    fraccion = [comun.media_y_desvio([r["fraccion_ts_media"] for r in por_valor[(x,)]]) for x in xs]
 
-    escribir_tabla(carpeta / "barrido_resumen.csv",
-                   [[k, len(por_k[(k,)]), *comun.con_error(*e), *comun.con_error(*c), *comun.con_error(*f)]
-                    for k, e, c, f in zip(ks, evac, motor, fraccion)],
-                   ["k", "M", "t_evac_media_s", "t_evac_desvio_s", "t_computo_media_s", "t_computo_desvio_s",
+    escribir_tabla(carpeta / f"{prefijo}_resumen.csv",
+                   [[f"{x:g}", len(por_valor[(x,)]), *comun.con_error(*e), *comun.con_error(*c),
+                     *comun.con_error(*f)] for x, e, c, f in zip(xs, evac, motor, fraccion)],
+                   [clave, "M", "t_evac_media_s", "t_evac_desvio_s", "t_computo_media_s", "t_computo_desvio_s",
                     "fraccion_ts_media", "fraccion_ts_desvio"])
 
-    def figura_k(valores, etiqueta, nombre, indice_ref=None, logaritmica=False):
+    def figura(valores, etiqueta, nombre, indice_ref=None, logaritmica=False):
         figura, eje = plt.subplots(figsize=(10, 6))
-        eje.errorbar(ks, [v[0] for v in valores], yerr=[v[1] for v in valores], fmt="-^",
+        eje.errorbar(xs, [v[0] for v in valores], yerr=[v[1] for v in valores], fmt="-^",
                      color=comun.COLORES["hybrid"], capsize=6, label="Híbrido")
         if indice_ref is not None:
             for esquema, medidas in refs.items():
                 linea_referencia(eje, esquema, medidas[indice_ref][0])
-        eje.set_xscale("symlog", linthresh=1)
-        eje.set_xticks(ks, [str(k) for k in ks])
-        eje.set_xlabel("Anticipación (pasos temporales)")
+        if escala_x == "symlog":
+            eje.set_xscale("symlog", linthresh=1)
+        else:
+            eje.set_xscale(escala_x)
+        eje.set_xticks(xs, [f"{x:g}" for x in xs])
+        eje.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+        eje.set_xlabel(etiqueta_x)
         eje.set_ylabel(etiqueta)
         if logaritmica:
             eje.set_yscale("log")
         eje.legend()
         guardar(figura, nombre, carpeta)
 
-    figura_k(evac, "Tiempo de evacuación (s)", "barrido_evacuacion", indice_ref=0)
-    figura_k(motor, "Tiempo de cómputo (s)", "barrido_tiempo_computo", indice_ref=1, logaritmica=True)
-    figura_k(fraccion, "Fracción media de agentes por pasos", "barrido_fraccion_ts")
+    figura(evac, "Tiempo de evacuación (s)", f"{prefijo}_evacuacion", indice_ref=0)
+    figura(motor, "Tiempo de cómputo (s)", f"{prefijo}_tiempo_computo", indice_ref=1, logaritmica=True)
+    figura(fraccion, "Fracción media de agentes por pasos", f"{prefijo}_fraccion_ts")
+
+
+def graficos_barrido(resumenes, base, carpeta):
+    print("[barrido]")
+    barrido_parametro(resumenes, referencias(base), carpeta, "barrido", "k",
+                      "Anticipación (pasos temporales)", "symlog")
+
+
+def graficos_umbral(resumenes, carpeta):
+    """Un juego de figuras por N: híbrido según d*, con TSDMD y EDMD del mismo N."""
+    print("[umbral]")
+    for n in sorted({r["N"] for r in resumenes}):
+        del_n = [r for r in resumenes if r["N"] == n]
+        hibrido = [r for r in del_n if r["esquema"] == "hybrid"]
+        if hibrido:
+            barrido_parametro(hibrido, referencias(del_n), carpeta, f"umbral_N{n}", "d",
+                              "Distancia de cierre (m)", "log")
 
 
 # ---------------------------------------------------------------------------
@@ -273,14 +294,18 @@ def graficos_escalamiento(resumenes, carpeta, estudio):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("estudios", nargs="*", choices=["base", "barrido", "densidad", "lado"],
-                        help="Por defecto, todos")
+    todos = ["base", "barrido", "umbral", "densidad", "lado"]
+    # Sin `choices`: argparse rechaza la lista vacía de nargs="*" contra choices.
+    parser.add_argument("estudios", nargs="*", help=f"Por defecto, todos: {' '.join(todos)}")
     parser.add_argument("--resultados", type=Path, default=comun.RESULTADOS)
     parser.add_argument("--figuras", type=Path, default=comun.FIGURAS)
     args = parser.parse_args()
 
+    desconocidos = [e for e in args.estudios if e not in todos]
+    if desconocidos:
+        parser.error(f"estudios desconocidos: {' '.join(desconocidos)} (opciones: {' '.join(todos)})")
     if not args.estudios:
-        args.estudios = ["base", "barrido", "densidad", "lado"]
+        args.estudios = todos
     comun.estilo_figuras()
     base = comun.leer_resumenes(args.resultados / "base")
     for estudio in args.estudios:
@@ -295,6 +320,8 @@ def main():
             graficos_base(resumenes, args.figuras)
         elif estudio == "barrido":
             graficos_barrido(resumenes, base, args.figuras)
+        elif estudio == "umbral":
+            graficos_umbral(resumenes, args.figuras)
         else:
             graficos_escalamiento(resumenes, args.figuras, estudio)
 
