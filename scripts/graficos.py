@@ -34,6 +34,16 @@ import comun  # noqa: E402
 
 
 
+# Ejes y: el símbolo del observable, definido en la diapositiva de observables.
+Y_POBLACION = r"$N_{\mathrm{int}}$"
+Y_FRACCION = r"$f_{\mathrm{TS}}$"
+Y_FRACCION_MEDIA = r"$\overline{f}_{\mathrm{TS}}$"
+Y_EVACUACION = r"$T_{\mathrm{ev}}$ (s)"
+Y_COMPUTO = r"$T_{\mathrm{motor}}$ (s)"
+Y_COSTO_RELATIVO = r"$T_{\mathrm{motor}}\,/\,T_{\mathrm{motor}}^{\mathrm{TSDMD}}$"
+Y_EVACUACION_RELATIVA = r"$T_{\mathrm{ev}}\,/\,T_{\mathrm{ev}}^{\mathrm{TSDMD}}$"
+
+
 def guardar(figura, nombre, carpeta):
     carpeta.mkdir(parents=True, exist_ok=True)
     destino = carpeta / f"{nombre}.png"
@@ -50,10 +60,10 @@ def agrupar(resumenes, *claves):
 
 
 def ticks_n(eje, ns):
-    """En los ejes logarítmicos de N, marcar los N usados con números enteros."""
-    from matplotlib.ticker import NullFormatter
+    """Ejes logarítmicos de N: potencias de 10 (guía 1.9); los N usados se ven por sus símbolos."""
+    from matplotlib.ticker import LogLocator, NullFormatter
 
-    eje.set_xticks(ns, [str(n) for n in ns])
+    eje.xaxis.set_major_locator(LogLocator(base=10))
     eje.xaxis.set_minor_formatter(NullFormatter())
 
 
@@ -78,12 +88,12 @@ def graficos_base(resumenes, carpeta):
     # Población dentro vs t: una figura por esquema, cada realización identificada.
     for esquema in esquemas:
         corridas = sorted(por_esquema[(esquema,)], key=lambda r: r["semilla"])
-        figura, eje = plt.subplots(figsize=(10, 6))
+        figura, eje = plt.subplots(figsize=(7.5, 4.6))
         for corrida in corridas:
             t, dentro, _, _ = comun.leer_poblacion(Path(corrida["carpeta"]) / "population.txt")
             eje.plot(t, dentro, color=comun.COLORES[esquema], linewidth=1.2, alpha=0.6)
         eje.set_xlabel("Tiempo (s)")
-        eje.set_ylabel("Agentes dentro de la habitación")
+        eje.set_ylabel(Y_POBLACION)
         eje.set_xlim(left=0)
         eje.set_ylim(bottom=0)
         guardar(figura, f"base_poblacion_{esquema}", carpeta)
@@ -92,13 +102,13 @@ def graficos_base(resumenes, carpeta):
     semillas_comunes = set.intersection(*[{r["semilla"] for r in por_esquema[(e,)]} for e in esquemas])
     if semillas_comunes:
         semilla = min(semillas_comunes)
-        figura, eje = plt.subplots(figsize=(10, 6))
+        figura, eje = plt.subplots(figsize=(7.5, 4.6))
         for esquema in esquemas:
             corrida = next(r for r in por_esquema[(esquema,)] if r["semilla"] == semilla)
             t, dentro, _, _ = comun.leer_poblacion(Path(corrida["carpeta"]) / "population.txt")
             eje.plot(t, dentro, color=comun.COLORES[esquema], label=comun.NOMBRES[esquema])
         eje.set_xlabel("Tiempo (s)")
-        eje.set_ylabel("Agentes dentro de la habitación")
+        eje.set_ylabel(Y_POBLACION)
         eje.set_xlim(left=0)
         eje.set_ylim(bottom=0)
         eje.legend()
@@ -107,7 +117,7 @@ def graficos_base(resumenes, carpeta):
     # Fracción de agentes TS en el híbrido.
     if ("hybrid",) in por_esquema:
         corridas = sorted(por_esquema[("hybrid",)], key=lambda r: r["semilla"])
-        figura, eje = plt.subplots(figsize=(10, 6))
+        figura, eje = plt.subplots(figsize=(7.5, 4.6))
         for corrida in corridas:
             t, _, activos, ts = comun.leer_poblacion(Path(corrida["carpeta"]) / "population.txt")
             # Se omite t = 0: el estado inicial marca a todos como TS antes de clasificar.
@@ -115,7 +125,7 @@ def graficos_base(resumenes, carpeta):
             eje.plot(t[validos], ts[validos] / activos[validos], color=comun.COLORES["hybrid"],
                      linewidth=1.2, alpha=0.6)
         eje.set_xlabel("Tiempo (s)")
-        eje.set_ylabel("Fracción de agentes por pasos")
+        eje.set_ylabel(Y_FRACCION)
         eje.set_xlim(left=0)
         eje.set_ylim(0, 1.03)
         guardar(figura, "base_fraccion_ts", carpeta)
@@ -136,13 +146,13 @@ def graficos_base(resumenes, carpeta):
                     "t_computo_desvio_s", "fraccion_ts_media", "fraccion_ts_desvio"])
 
     for indice, (nombre, etiqueta, logaritmica) in enumerate([
-            ("base_evacuacion", "Tiempo de evacuación (s)", False),
-            ("base_tiempo_computo", "Tiempo de cómputo (s)", True)]):
-        figura, eje = plt.subplots(figsize=(8, 6))
+            ("base_evacuacion", Y_EVACUACION, False),
+            ("base_tiempo_computo", Y_COMPUTO, True)]):
+        figura, eje = plt.subplots(figsize=(6, 4.6))
         for x, esquema in enumerate(esquemas):
             media, desvio = medidas[esquema][indice]
             eje.errorbar(x, media, yerr=desvio, fmt=comun.MARCADORES[esquema], color=comun.COLORES[esquema],
-                         capsize=8, markersize=11, elinewidth=2)
+                         capsize=8, markersize=6, elinewidth=1.5, capthick=1.5)
         eje.set_xticks(range(len(esquemas)), [comun.NOMBRES[e] for e in esquemas])
         eje.set_xlim(-0.5, len(esquemas) - 0.5)
         eje.set_ylabel(etiqueta)
@@ -155,10 +165,10 @@ def graficos_base(resumenes, carpeta):
 # Barrido del parámetro del híbrido
 # ---------------------------------------------------------------------------
 
-def referencias(base):
-    """Media y desvío de TSDMD y EDMD del caso base, para dibujar como referencia."""
+def referencias(base, esquemas=("tsdmd",)):
+    """Media y desvío de los esquemas de referencia (por defecto solo TSDMD)."""
     salida = {}
-    for esquema in ("tsdmd", "edmd"):
+    for esquema in esquemas:
         corridas = [r for r in base if r["esquema"] == esquema]
         if corridas:
             salida[esquema] = (comun.media_y_desvio([r["t_evacuacion"] for r in corridas]),
@@ -186,8 +196,8 @@ def barrido_parametro(resumenes, refs, carpeta, prefijo, clave, etiqueta_x, esca
                     "fraccion_ts_media", "fraccion_ts_desvio"])
 
     def figura(valores, etiqueta, nombre, indice_ref=None, logaritmica=False):
-        figura, eje = plt.subplots(figsize=(10, 6))
-        eje.errorbar(xs, [v[0] for v in valores], yerr=[v[1] for v in valores], fmt="-^",
+        figura, eje = plt.subplots(figsize=(7.5, 4.6))
+        eje.errorbar(xs, [v[0] for v in valores], yerr=[v[1] for v in valores], fmt="-o",
                      color=comun.COLORES["hybrid"], capsize=6, label="Híbrido")
         if indice_ref is not None:
             for esquema, medidas in refs.items():
@@ -205,9 +215,10 @@ def barrido_parametro(resumenes, refs, carpeta, prefijo, clave, etiqueta_x, esca
         eje.legend()
         guardar(figura, nombre, carpeta)
 
-    figura(evac, "Tiempo de evacuación (s)", f"{prefijo}_evacuacion", indice_ref=0)
-    figura(motor, "Tiempo de cómputo (s)", f"{prefijo}_tiempo_computo", indice_ref=1, logaritmica=True)
-    figura(fraccion, "Fracción media de agentes por pasos", f"{prefijo}_fraccion_ts")
+    figura(evac, Y_EVACUACION, f"{prefijo}_evacuacion", indice_ref=0)
+    # Sin el EDMD el rango es chico: escala lineal (la log daba ticks ilegibles).
+    figura(motor, Y_COMPUTO, f"{prefijo}_tiempo_computo", indice_ref=1)
+    figura(fraccion, Y_FRACCION_MEDIA, f"{prefijo}_fraccion_ts")
 
 
 def graficos_barrido(resumenes, base, carpeta):
@@ -225,6 +236,51 @@ def graficos_umbral(resumenes, carpeta):
         if hibrido:
             barrido_parametro(hibrido, referencias(del_n), carpeta, f"umbral_N{n}", "d",
                               "Distancia de cierre (m)", "log")
+    umbral_comparacion(resumenes, carpeta)
+
+
+def cociente(a, b):
+    """(a/b, desvío) con propagación de errores relativos; a y b = (media, desvío)."""
+    r = a[0] / b[0]
+    return r, r * ((a[1] / a[0]) ** 2 + (b[1] / b[0]) ** 2) ** 0.5
+
+
+def umbral_comparacion(resumenes, carpeta):
+    """Observables del híbrido contra d* con una curva por N: fracción TS, y evacuación y
+    cómputo relativos al TSDMD del mismo N (así los tres N comparten escala)."""
+    ns = sorted({r["N"] for r in resumenes})
+    colores = [matplotlib.colormaps["viridis"](v) for v in np.linspace(0.1, 0.75, len(ns))]
+    curvas = {}
+    for n in ns:
+        del_n = [r for r in resumenes if r["N"] == n]
+        ts = [r for r in del_n if r["esquema"] == "tsdmd"]
+        por_d = agrupar([r for r in del_n if r["esquema"] == "hybrid"], "d")
+        ds = sorted(d for (d,) in por_d)
+        ref_ev = comun.media_y_desvio([r["t_evacuacion"] for r in ts])
+        ref_mo = comun.media_y_desvio([r["t_motor"] for r in ts])
+        curvas[n] = (ds,
+                     [comun.media_y_desvio([r["fraccion_ts_media"] for r in por_d[(d,)]]) for d in ds],
+                     [cociente(comun.media_y_desvio([r["t_evacuacion"] for r in por_d[(d,)]]), ref_ev) for d in ds],
+                     [cociente(comun.media_y_desvio([r["t_motor"] for r in por_d[(d,)]]), ref_mo) for d in ds])
+    for indice, (nombre, etiqueta, uno) in enumerate([
+            ("umbral_comparacion_fraccion_ts", Y_FRACCION_MEDIA, False),
+            ("umbral_comparacion_evacuacion", Y_EVACUACION_RELATIVA, True),
+            ("umbral_comparacion_costo_relativo", Y_COSTO_RELATIVO, True)], start=1):
+        figura, eje = plt.subplots(figsize=(7.5, 4.6))
+        for n, color in zip(ns, colores):
+            ds, valores = curvas[n][0], curvas[n][indice]
+            eje.errorbar(ds, [v[0] for v in valores], yerr=[v[1] for v in valores], fmt="-o",
+                         color=color, label=f"N = {n}")
+        if uno:
+            eje.axhline(1.0, color=comun.COLORES["tsdmd"], linestyle="--", linewidth=1.8, label="TSDMD")
+        eje.set_xscale("log")
+        todos = sorted({d for n in ns for d in curvas[n][0]})
+        eje.set_xticks(todos, [f"{d:g}" for d in todos])
+        eje.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+        eje.set_xlabel("Distancia de cierre (m)")
+        eje.set_ylabel(etiqueta)
+        eje.legend(fontsize=16)
+        guardar(figura, nombre, carpeta)
 
 
 # ---------------------------------------------------------------------------
@@ -251,9 +307,9 @@ def graficos_escalamiento(resumenes, carpeta, estudio):
                     "t_computo_media_s", "t_computo_desvio_s"])
 
     for indice, (nombre, etiqueta, logaritmica) in enumerate([
-            (f"{estudio}_evacuacion", "Tiempo de evacuación (s)", False),
-            (f"{estudio}_tiempo_computo", "Tiempo de cómputo (s)", True)]):
-        figura, eje = plt.subplots(figsize=(10, 6))
+            (f"{estudio}_evacuacion", Y_EVACUACION, False),
+            (f"{estudio}_tiempo_computo", Y_COMPUTO, True)]):
+        figura, eje = plt.subplots(figsize=(7.5, 4.6))
         for esquema in esquemas:
             ns, evac, motor = datos[esquema]
             valores = (evac, motor)[indice]
@@ -273,7 +329,7 @@ def graficos_escalamiento(resumenes, carpeta, estudio):
     if "tsdmd" in datos:
         ns_ts, _, motor_ts = datos["tsdmd"]
         referencia = dict(zip(ns_ts, [m[0] for m in motor_ts]))
-        figura, eje = plt.subplots(figsize=(10, 6))
+        figura, eje = plt.subplots(figsize=(7.5, 4.6))
         for esquema in esquemas:
             if esquema == "tsdmd":
                 continue
@@ -287,7 +343,7 @@ def graficos_escalamiento(resumenes, carpeta, estudio):
         eje.set_yscale("log")
         ticks_n(eje, ns_ts)
         eje.set_xlabel("Número de agentes")
-        eje.set_ylabel("Costo relativo al TSDMD")
+        eje.set_ylabel(Y_COSTO_RELATIVO)
         eje.legend()
         guardar(figura, f"{estudio}_costo_relativo", carpeta)
 

@@ -12,10 +12,10 @@ EJECUTABLE = RAIZ / "build" / "tp5"
 
 ESQUEMAS = ("tsdmd", "edmd", "hybrid")
 NOMBRES = {"tsdmd": "TSDMD", "edmd": "EDMD", "hybrid": "Híbrido"}
-# Mismo color y marcador para cada esquema en todas las figuras (el marcador
-# permite distinguirlos sin depender del color).
+# Mismo color para cada esquema en todas las figuras. El símbolo es el mismo
+# (círculo chico) para todos, a pedido de la cátedra: así no tapa la barra de error.
 COLORES = {"tsdmd": "tab:red", "edmd": "tab:blue", "hybrid": "tab:purple"}
-MARCADORES = {"tsdmd": "o", "edmd": "s", "hybrid": "^"}
+MARCADORES = {"tsdmd": "o", "edmd": "o", "hybrid": "o"}
 # En las animaciones: agente que avanzó por pasos (TS) o por eventos (ED).
 COLOR_TS = "tab:red"
 COLOR_ED = "tab:blue"
@@ -39,7 +39,8 @@ def estilo_figuras():
         "legend.fontsize": 20,
         "axes.formatter.use_mathtext": True,   # ×10ⁿ en vez de 1e3
         "lines.linewidth": 2.0,
-        "lines.markersize": 8,
+        "lines.markersize": 5,
+        "errorbar.capsize": 5,
         "figure.dpi": 100,
         "savefig.dpi": 150,
         "axes.grid": True,

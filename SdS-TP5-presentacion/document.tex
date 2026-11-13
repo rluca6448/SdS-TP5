@@ -136,54 +136,79 @@
 % reiniciarlo. No se aplican leyes de colisión elástica de discos duros.
 \end{frame}
 
-\begin{frame}{EDMD: recuperación continua integrada exactamente}
-\[
- \alpha=\frac{r_{\max}}{\tau},\qquad T_r=\frac{r_{\max}-r_{\min}}{\alpha}=0{,}30\un{s},\qquad
- u=t-t_{\mathrm{rec}}
-\]
-\[
- r(u)=r_{\min}+\alpha u,\qquad
- v(u)=v_d^{\max}\left(\frac{u}{T_r}\right)^\beta\quad(0\le u\le T_r)
-\]
-\[
- S(u)=
- \frac{v_d^{\max}T_r}{\beta+1}\left(\frac{u}{T_r}\right)^{\beta+1}
-\]
-\[
- \vb x(t)=\vb x(t_0)+\widehat{\vb e}\,[S(t-t_{\mathrm{rec}})-S(t_0-t_{\mathrm{rec}})]
-\]
-\notaBreve{Dirección fija por tramo; un cambio de target no reinicia la recuperación.}
+\begin{frame}{EDMD: cambio del radio en un contacto}
+\begin{columns}[c]
+\begin{column}{.52\textwidth}\centering
+\begin{tikzpicture}[x=22mm,y=50mm]
+% r(t) por fases: libre, contacto (colapso), escape de duración dt, recuperación lineal de 0,3 s
+\draw[flecha] (0,0)--(5.6,0) node[right]{$t$};
+\draw[flecha] (0,0)--(0,1.25) node[above]{$r$};
+\draw[dashed,gray] (0,1)--(5.4,1) node[right,text=black]{$r_{\max}$};
+\draw[dashed,gray] (0,.4)--(5.4,.4); \node[left] at (0,.4){$r_{\min}$};
+\draw[ED,ultra thick] (0,1)--(1.2,1);
+\draw[TS,ultra thick] (1.2,1)--(1.2,.4)--(1.9,.4);
+\draw[HY,ultra thick] (1.9,.4)--(4,1);
+\draw[ED,ultra thick] (4,1)--(5.4,1);
+\draw (1.2,-.05)--(1.2,.05); \node[below] at (1.2,0){$t_c$};
+\draw (1.9,-.05)--(1.9,.05); \node[below] at (2.05,0){$+\Delta t$};
+\draw (4,-.05)--(4,.05); \node[below] at (4,0){$+\,T_r$};
+\node[above,text=ED] at (.6,1){libre};
+\node[below,text=TS] at (1.55,.38){escape};
+\node[below right,text=HY] at (3,.68){recuperación};
+\end{tikzpicture}
+\end{column}
+\begin{column}{.46\textwidth}
+\begin{enumerate}\setlength{\itemsep}{2mm}
+\item En $t_c$ los discos se tocan: $r\to r_{\min}$ y escape a $v_e$ durante $\Delta t$
+\item Recuperación lineal:
+\[ r(u)=r_{\min}+\frac{r_{\max}}{\tau}\,u,\quad T_r=0{,}30\un{s} \]
+\item La rapidez crece con el radio:
+\[ v(u)=v_d^{\max}\left(\frac{u}{T_r}\right)^\beta \]
+\end{enumerate}
+\end{column}
+\end{columns}
+\notaBreve{$u=t-t_{\mathrm{rec}}$. La posición se integra exacta: $\vb x(t)=\vb x_0+\widehat{\vb e}\,[S(u)-S(u_0)]$, con $S(u)=\frac{v_d^{\max}T_r}{\beta+1}(u/T_r)^{\beta+1}$.}
 % Aclaración oral: es la adaptación continua implementada, distinta del CPM
-% discreto. La trayectoria es rectilínea por tramo, con rapidez no constante.
+% discreto. Dirección fija por tramo; un cambio de target no reinicia la recuperación.
 \end{frame}
 
-\begin{frame}{EDMD: predicción del próximo contacto}
+\begin{frame}{EDMD: estimación del momento del choque}
 \[
- g_{ij}(t)=\|\vb x_i(t)-\vb x_j(t)\|-r_i(t)-r_j(t)
+ g_{ij}(t)=\|\vb x_i(t)-\vb x_j(t)\|-r_i(t)-r_j(t)\qquad\text{choque: primer }t\text{ con }g_{ij}(t)=0
 \]
 \begin{columns}[T]
-\begin{column}{.49\textwidth}
-\textcolor{ED}{Radios y velocidades constantes}
+\begin{column}{.47\textwidth}
+\textcolor{ED}{Libre o escape: $r$ y $\vb v$ constantes}
+\par\notaBreve{$\vb p=\vb x_i-\vb x_j$,\ $\vb u=\vb v_i-\vb v_j$,\ $R=r_i+r_j$}
+\[
+ \|\vb p+\vb u\,h\|=R
+\]
 \[
  (\vb u\!\cdot\!\vb u)h^2+2(\vb p\!\cdot\!\vb u)h+\|\vb p\|^2-R^2=0
 \]
-\notaBreve{$\vb p=\vb x_i-\vb x_j$; $\vb u=\vb v_i-\vb v_j$; $R=r_i+r_j$.}
-\par Primera raíz de entrada válida.
+Se toma la raíz menor con $h>0$: tiempo exacto.
 \end{column}
-\begin{column}{.48\textwidth}
-\textcolor{HY}{Durante recuperación}
-\[
- B\ge v_i+v_j+\dot r_i+\dot r_j
-\]
-\[
- h=\max\!\left(\frac{g-\varepsilon_c/2}{B},\frac{2\varepsilon_p}{B}\right)
-\]
-\notaBreve{Avance acotado + bisección;\quad $\varepsilon_c=10^{-9}\un{m}$, $\varepsilon_p=10^{-6}\un{m}$.}
+\begin{column}{.51\textwidth}
+\textcolor{HY}{Recuperación: $r$ y $v$ cambian}
+\par Sin fórmula cerrada. El hueco se cierra a lo sumo a ritmo $B=v_i+v_j+\dot r_i+\dot r_j$:
+\par\centering
+\begin{tikzpicture}[x=11mm,y=11mm]
+\draw[flecha] (0,0)--(6.2,0) node[right]{$t$};
+\draw[flecha] (0,0)--(0,2.4) node[above]{$g$};
+% g(t)=2(1-(t/5.3)^1.6); B=1.25 supera la pendiente máxima de g (0,6): cada recta
+% punteada (pendiente -B) llega a g=0 antes que la curva, así que no saltea el choque.
+\draw[HY,very thick,domain=0:5.3,samples=40] plot (\x,{2*(1-(\x/5.3)^1.6)});
+\draw[dashed] (0,2)--(1.6,0); \draw[dashed] (1.6,1.707)--(2.966,0); \draw[dashed] (2.966,1.21)--(3.934,0);
+\foreach \x/\y in {1.6/1.707,2.966/1.21,3.934/.759}{\draw[dotted] (\x,0)--(\x,\y); \fill (\x,\y) circle (.06);}
+\node[below] at (1.6,0){$t_1$}; \node[below] at (2.966,0){$t_2$}; \node[below] at (3.934,0){$t_3$};
+\fill[TS] (5.3,0) circle (.09); \node[below,text=TS] at (5.4,0){choque};
+\end{tikzpicture}
+\par\raggedright Antes de $t+g/B$ no puede haber choque: se avanza hasta ahí y se repite; cerca de $g=0$, bisección.
 \end{column}
 \end{columns}
-\vfill\notaBreve{Paredes: distancia al segmento, incluidos extremos. Horizonte limitado al tramo válido.}
-% El mínimo de avance introduce tolerancia espacial; no decir raíz exacta en
-% recuperación ni ausencia absoluta de penetración. Tiempo de bisección 1e-12 s.
+\vfill\notaBreve{Paredes: distancia al segmento, incluidos extremos. Tolerancias $10^{-9}\un{m}$ (contacto) y $10^{-12}\un{s}$ (bisección).}
+% El mínimo de avance introduce tolerancia espacial (1e-6 m); no decir raíz exacta en
+% recuperación ni ausencia absoluta de penetración.
 \end{frame}
 
 \begin{frame}{EDMD: agenda y búsqueda local}
@@ -217,15 +242,27 @@
  \quad\Longrightarrow\quad i,j\in\mathcal B_0
 \]
 \centering
-\begin{tikzpicture}[x=1cm,y=1cm]
-\draw[flecha] (0,0)--(20,0) node[right]{$t$};
-\foreach \x/\label in {1/t_n,8/{t_n+\Delta t},15/{t_n+2\Delta t}}{
-\draw (\x,-.2)--(\x,.2);\node[below] at (\x,-.3){$\label$};}
-\fill[ED] (5,0) circle (.13);\node[above,text=ED] at (5,.3){contacto previsto};
-\node[above,text=TS] at (1,1.3){entrada a TS};
-\draw[flecha,TS] (1,1.1)--(1,.3);
+\begin{tikzpicture}[x=1.45cm,y=1.45cm]
+% Izquierda: anticipación. Dos ED en curso de choque; el contacto previsto cae antes de t_n + k dt.
+\draw[ED,very thick,fill=ED!15] (0,0) circle (.5) node{$i$};
+\draw[ED,very thick,fill=ED!15] (6,0) circle (.5) node{$j$};
+\draw[flecha,ED] (.55,.15)--(1.8,.45); \draw[flecha,ED] (5.45,.15)--(4.2,.45);
+\draw[dotted,thick,gray] (0,0)--(2.5,.7); \draw[dotted,thick,gray] (6,0)--(3.5,.7);
+\draw[TS,dashed,thick] (2.5,.7) circle (.5); \draw[TS,dashed,thick] (3.5,.7) circle (.5);
+\node[TS,above] at (3,1.3){contacto en $t_c\le t_n+k\Delta t$};
+\node[below,align=center] at (3,-.9){ambos pasan a TS\\antes de tocarse};
+% Derecha: cierre. Radio de interacción d* alrededor de un agente TS.
+\begin{scope}[xshift=16.5cm]
+\draw[TS,thick,dashed] (0,0) circle (2.6);
+\draw[TS,very thick,fill=TS!25] (0,0) circle (.5) node{TS};
+\draw[|<->|,thick] (0,-.6)--(0,-2.6) node[midway,right]{$d^*$};
+\draw[TS,very thick,fill=TS!25] (1.6,1.2) circle (.5);
+\node[TS,right,align=left] at (2.7,2.2){dentro de $d^*$:\\entra a TS};
+\draw[ED,very thick,fill=ED!15] (4.1,-1.2) circle (.5) node{ED};
+\node[ED,right,align=left] at (4.7,-1.2){fuera:\\sigue ED};
+\end{scope}
 \end{tikzpicture}
-\vfill\notaBreve{$k$: anticipación en pasos.\quad El cambio de esquema no aplica anticipadamente la contracción.}
+\vfill\notaBreve{$k$: anticipación en pasos;\ $d^*$: radio de interacción del cierre (diapositiva siguiente). El cambio de esquema no aplica anticipadamente la contracción.}
 % Incluye contactos con paredes. La clasificación real comprueba los vuelos
 % tentativos de los TS recuperados y repite el cierre si aparecen nuevas semillas.
 % k=0 existe en el barrido; evitar afirmar entrada estrictamente previa para k=0.
@@ -315,7 +352,7 @@ Estudio & Parámetro variable & Condición fija\\\midrule
 Caso base & TSDMD / EDMD / híbrido & $N_0=500$, $L=50\un{m}$\\[3mm]
 Anticipación & $k=0,1,2,4,8,16,32$ & $d^*=0{,}6\un{m}$\\[3mm]
 Cierre & $d^*=0{,}6,1,2,4,8\un{m}$ & $k=1$; $N_0=10,100,500$\\[3mm]
-Densidad fija & $N_0=100\ldots2000$ & $L=\sqrt{N_0/\rho_0}$; $\rho_0=0{,}2\un{m^{-2}}$\\[3mm]
+Densidad fija & $N_0=5\ldots2000$ & $L=\sqrt{N_0/\rho_0}$; $\rho_0=0{,}2\un{m^{-2}}$\\[3mm]
 Habitación fija & $N_0=5\ldots1500$ & $L=50\un{m}$\\\bottomrule
 \end{tabular}
 \vfill
@@ -333,7 +370,8 @@ $M=10$ realizaciones por configuración; medias y desvíos estándar muestrales.
 \notaBreve{$t_i^{\mathrm{salida}}$: último cruce hacia afuera por la abertura, antes del retiro.}
 \vspace{5mm}
 \[
- T_{\mathrm{motor}}=\sum_{\text{llamadas a step}}\bigl(t_{\mathrm{fin}}^{\mathrm{reloj}}-t_{\mathrm{inicio}}^{\mathrm{reloj}}\bigr)
+ T_{\mathrm{motor}}=\sum_{\text{llamadas a step}}\bigl(t_{\mathrm{fin}}^{\mathrm{reloj}}-t_{\mathrm{inicio}}^{\mathrm{reloj}}\bigr),\qquad
+ C=\frac{T_{\mathrm{motor}}}{T_{\mathrm{motor}}^{\mathrm{TSDMD}}}
 \]
 \vfill
 Se promedian los tiempos de las $M$ realizaciones de cada configuración.
@@ -363,45 +401,47 @@ Se promedian los tiempos de las $M$ realizaciones de cada configuración.
 \video{Evacuación EDMD}{animaciones/fotogramas_edmd/edmd_t0030.00.png}{edmd.mp4}{\urlED}
 \video{Evacuación híbrida}{animaciones/fotogramas_hybrid/hybrid_t0030.00.png}{hybrid.mp4}{\urlHY}
 \grafico{Población: comparación de esquemas}{base_poblacion_comparacion.png}{}
-\grafico{Híbrido: fracción TS durante la evacuación}{base_fraccion_ts.png}{}
+\grafico{Híbrido: fracción TS durante la evacuación}{base_fraccion_ts.png}{$f_{\mathrm{TS}}(t_n)=N_{\mathrm{TS,act}}(t_n)/N_{\mathrm{act}}(t_n)$;\quad $N_0=500$, $L=50\un{m}$, $k=1$, $d^*=0{,}6\un{m}$; 10 realizaciones.}
 \begin{frame}{Tiempos de evacuación y de cómputo}
 	\begin{columns}[T,onlytextwidth]
 		\begin{column}{.48\textwidth}
 			\centering
-			\textbf{Tiempo de evacuación}\par\smallskip
+			\textbf{Tiempo de evacuación} $T_{\mathrm{ev}}$\par\smallskip
 			\includegraphics[width=\linewidth]{base_evacuacion.png}
 		\end{column}
 		\begin{column}{.48\textwidth}
 			\centering
-			\textbf{Tiempo de cómputo}\par\smallskip
+			\textbf{Tiempo de cómputo} $T_{\mathrm{motor}}$\par\smallskip
 			\includegraphics[width=\linewidth]{base_tiempo_computo.png}
 		\end{column}
 	\end{columns}
 	
 	\medskip
 	\centering
-	{\small\textcolor{magenta}{Cambiar las figuras de las barras}}
+	\notaBreve{$N_0=500$, $L=50\un{m}$; 10 realizaciones; barras: desvío estándar.}
 \end{frame}
-\grafico{Anticipación: tiempo de evacuación}{barrido_evacuacion.png}{}
-\grafico{Anticipación: tiempo de cómputo}{barrido_tiempo_computo.png}{}
-\grafico{Distancia de cierre: participación de TS}{umbral_N500_fraccion_ts.png}{}
-\begin{frame}{Distancia de cierre}
+\grafico{Anticipación: tiempo de evacuación}{barrido_evacuacion.png}{$N_0=500$, $L=50\un{m}$, $d^*=0{,}6\un{m}$. EDMD (fuera de escala): $T_{\mathrm{ev}}=336\pm3\un{s}$.}
+\grafico{Anticipación: tiempo de cómputo}{barrido_tiempo_computo.png}{$N_0=500$, $L=50\un{m}$, $d^*=0{,}6\un{m}$. EDMD (fuera de escala): $T_{\mathrm{motor}}=12{,}9\pm0{,}2\un{s}$.}
+\grafico{Distancia de cierre: participación de TS}{umbral_comparacion_fraccion_ts.png}{$L=50\un{m}$, $k=1$; 10 realizaciones por punto.}
+\begin{frame}{Distancia de cierre: evacuación y cómputo relativos al TSDMD}
+	\notaBreve{$L=50\un{m}$, $k=1$; cada cociente contra el TSDMD con el mismo $N_0$; barras: propagación de los desvíos.}
 	\begin{columns}[T,onlytextwidth]
 		\begin{column}{.48\textwidth}
 			\centering
-			\textbf{Tiempo de evacuación}\par\smallskip
-			\includegraphics[width=\linewidth]{umbral_N500_evacuacion.png}
+			\textbf{Evacuación} $T_{\mathrm{ev}}/T_{\mathrm{ev}}^{\mathrm{TSDMD}}$\par\smallskip
+			\includegraphics[width=\linewidth]{umbral_comparacion_evacuacion.png}
 		\end{column}
 		\begin{column}{.48\textwidth}
 			\centering
-			\textbf{Tiempo de cómputo}\par\smallskip
-			\includegraphics[width=\linewidth]{umbral_N500_tiempo_computo.png}
+			\textbf{Cómputo} $T_{\mathrm{motor}}/T_{\mathrm{motor}}^{\mathrm{TSDMD}}$\par\smallskip
+			\includegraphics[width=\linewidth]{umbral_comparacion_costo_relativo.png}
 		\end{column}
 	\end{columns}
+	\notaBreve{EDMD, $T_{\mathrm{motor}}/T_{\mathrm{motor}}^{\mathrm{TSDMD}}$: $1{,}0$ ($N_0=10$), $11$ ($N_0=100$), $16$ ($N_0=500$).}
 \end{frame}
-\grafico{Escalamiento a densidad inicial constante}{densidad_tiempo_computo.png}{}
-\grafico{Escalamiento a tamaño de habitación constante}{lado_tiempo_computo.png}{}
-\grafico{Costo relativo a TSDMD}{lado_costo_relativo.png}{}
+\grafico{Escalamiento a densidad inicial constante}{densidad_tiempo_computo.png}{$\rho_0=0{,}2\un{m^{-2}}$, $L=\sqrt{N_0/\rho_0}$ (de $5$ a $100\un{m}$); híbrido: $k=1$, $d^*=0{,}6\un{m}$.}
+\grafico{Escalamiento a tamaño de habitación constante}{lado_tiempo_computo.png}{$L=50\un{m}$; híbrido: $k=1$, $d^*=0{,}6\un{m}$.}
+\grafico{Costo relativo a TSDMD}{lado_costo_relativo.png}{Cociente $T_{\mathrm{motor}}/T_{\mathrm{motor}}^{\mathrm{TSDMD}}$ con el mismo $N_0$;\quad $L=50\un{m}$.}
 % No hay en esta carpeta animaciones ni curvas temporales de los extremos de
 % cada barrido. No presentar los tres videos base como si fueran esos estudios.
 
@@ -428,6 +468,9 @@ Se promedian los tiempos de las $M$ realizaciones de cada configuración.
 \grafico{Cierre con 100 agentes: evacuación}{umbral_N100_evacuacion.png}{$N_0=100$, $L=50\un{m}$, $k=1$.}
 \grafico{Cierre con 100 agentes: cómputo}{umbral_N100_tiempo_computo.png}{$N_0=100$, $L=50\un{m}$, $k=1$.}
 \grafico{Cierre con 100 agentes: fracción TS}{umbral_N100_fraccion_ts.png}{$N_0=100$, $L=50\un{m}$, $k=1$.}
+\grafico{Cierre con 500 agentes: evacuación}{umbral_N500_evacuacion.png}{$N_0=500$, $L=50\un{m}$, $k=1$.}
+\grafico{Cierre con 500 agentes: cómputo}{umbral_N500_tiempo_computo.png}{$N_0=500$, $L=50\un{m}$, $k=1$.}
+\grafico{Cierre con 500 agentes: fracción TS}{umbral_N500_fraccion_ts.png}{$N_0=500$, $L=50\un{m}$, $k=1$.}
 \grafico{Densidad fija: evacuación}{densidad_evacuacion.png}{$\rho_0=0{,}2\un{m^{-2}}$, $L=\sqrt{N_0/\rho_0}$.}
 \grafico{Densidad fija: costo relativo}{densidad_costo_relativo.png}{$\rho_0=0{,}2\un{m^{-2}}$; cociente entre tiempos medios de motor.}
 \grafico{Habitación fija: evacuación}{lado_evacuacion.png}{$L=50\un{m}$; densidad inicial variable.}
