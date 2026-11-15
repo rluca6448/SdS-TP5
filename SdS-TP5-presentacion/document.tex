@@ -400,9 +400,10 @@ Se promedian los tiempos de las $M$ realizaciones de cada configuración.
 \video{Evacuación TSDMD}{animaciones/fotogramas_tsdmd/tsdmd_t0030.00.png}{tsdmd.mp4}{\urlTS}
 \video{Evacuación EDMD}{animaciones/fotogramas_edmd/edmd_t0030.00.png}{edmd.mp4}{\urlED}
 \video{Evacuación híbrida}{animaciones/fotogramas_hybrid/hybrid_t0030.00.png}{hybrid.mp4}{\urlHY}
-\grafico{Población: comparación de esquemas}{base_poblacion_comparacion.png}{}
-\grafico{Híbrido: fracción TS durante la evacuación}{base_fraccion_ts.png}{$f_{\mathrm{TS}}(t_n)=N_{\mathrm{TS,act}}(t_n)/N_{\mathrm{act}}(t_n)$;\quad $N_0=500$, $L=50\un{m}$, $k=1$, $d^*=0{,}6\un{m}$; 10 realizaciones.}
+\grafico{Población: comparación de esquemas}{base_poblacion_comparacion.png}{$N_0=500$; una realización por esquema}
+\grafico{Híbrido: fracción TS durante la evacuación}{base_fraccion_ts.png}{$N_0=500$; $k=1$, $d^*=0{,}6\un{m}$; $M=10$}
 \begin{frame}{Tiempos de evacuación y de cómputo}
+	\notaBreve{$N_0=500$; $M=10$}\par\vspace{1mm}
 	\begin{columns}[T,onlytextwidth]
 		\begin{column}{.48\textwidth}
 			\centering
@@ -416,15 +417,12 @@ Se promedian los tiempos de las $M$ realizaciones de cada configuración.
 		\end{column}
 	\end{columns}
 	
-	\medskip
-	\centering
-	\notaBreve{$N_0=500$, $L=50\un{m}$; 10 realizaciones; barras: desvío estándar.}
 \end{frame}
-\grafico{Anticipación: tiempo de evacuación}{barrido_evacuacion.png}{$N_0=500$, $L=50\un{m}$, $d^*=0{,}6\un{m}$. EDMD (fuera de escala): $T_{\mathrm{ev}}=336\pm3\un{s}$.}
-\grafico{Anticipación: tiempo de cómputo}{barrido_tiempo_computo.png}{$N_0=500$, $L=50\un{m}$, $d^*=0{,}6\un{m}$. EDMD (fuera de escala): $T_{\mathrm{motor}}=12{,}9\pm0{,}2\un{s}$.}
-\grafico{Distancia de cierre: participación de TS}{umbral_comparacion_fraccion_ts.png}{$L=50\un{m}$, $k=1$; 10 realizaciones por punto.}
+\grafico{Anticipación: tiempo de evacuación}{barrido_evacuacion.png}{$N_0=500$; $d^*=0{,}6\un{m}$; $M=10$}
+\grafico{Anticipación: tiempo de cómputo}{barrido_tiempo_computo.png}{$N_0=500$; $d^*=0{,}6\un{m}$; $M=10$}
+\grafico{Distancia de cierre: participación de TS}{umbral_comparacion_fraccion_ts.png}{$k=1$; $M=10$}
 \begin{frame}{Distancia de cierre: evacuación y cómputo relativos al TSDMD}
-	\notaBreve{$L=50\un{m}$, $k=1$; cada cociente contra el TSDMD con el mismo $N_0$; barras: propagación de los desvíos.}
+	\notaBreve{$k=1$; $M=10$}\par\vspace{1mm}
 	\begin{columns}[T,onlytextwidth]
 		\begin{column}{.48\textwidth}
 			\centering
@@ -437,11 +435,10 @@ Se promedian los tiempos de las $M$ realizaciones de cada configuración.
 			\includegraphics[width=\linewidth]{umbral_comparacion_costo_relativo.png}
 		\end{column}
 	\end{columns}
-	\notaBreve{EDMD, $T_{\mathrm{motor}}/T_{\mathrm{motor}}^{\mathrm{TSDMD}}$: $1{,}0$ ($N_0=10$), $11$ ($N_0=100$), $16$ ($N_0=500$).}
 \end{frame}
-\grafico{Escalamiento a densidad inicial constante}{densidad_tiempo_computo.png}{$\rho_0=0{,}2\un{m^{-2}}$, $L=\sqrt{N_0/\rho_0}$ (de $5$ a $100\un{m}$); híbrido: $k=1$, $d^*=0{,}6\un{m}$.}
-\grafico{Escalamiento a tamaño de habitación constante}{lado_tiempo_computo.png}{$L=50\un{m}$; híbrido: $k=1$, $d^*=0{,}6\un{m}$.}
-\grafico{Costo relativo a TSDMD}{lado_costo_relativo.png}{Cociente $T_{\mathrm{motor}}/T_{\mathrm{motor}}^{\mathrm{TSDMD}}$ con el mismo $N_0$;\quad $L=50\un{m}$.}
+\grafico{Escalamiento a densidad inicial constante}{densidad_tiempo_computo.png}{$\rho_0=0{,}2\un{m^{-2}}$; $k=1$, $d^*=0{,}6\un{m}$; $M=10$}
+\grafico{Escalamiento a tamaño de habitación constante}{lado_tiempo_computo.png}{$k=1$, $d^*=0{,}6\un{m}$; $M=10$}
+\grafico{Costo relativo a TSDMD}{lado_costo_relativo.png}{$k=1$, $d^*=0{,}6\un{m}$; $M=10$}
 % No hay en esta carpeta animaciones ni curvas temporales de los extremos de
 % cada barrido. No presentar los tres videos base como si fueran esos estudios.
 
@@ -461,22 +458,22 @@ Se promedian los tiempos de las $M$ realizaciones de cada configuración.
 \apoyotrue
 \section{Material de apoyo}
 % Fuera del recorrido oral de 13 minutos. Todas las figuras restantes disponibles.
-\grafico{Anticipación: fracción temporal TS}{barrido_fraccion_ts.png}{$N_0=500$, $L=50\un{m}$, $d^*=0{,}6\un{m}$.}
-\grafico{Cierre con 10 agentes: evacuación}{umbral_N10_evacuacion.png}{$N_0=10$, $L=50\un{m}$, $k=1$.}
-\grafico{Cierre con 10 agentes: cómputo}{umbral_N10_tiempo_computo.png}{$N_0=10$, $L=50\un{m}$, $k=1$.}
-\grafico{Cierre con 10 agentes: fracción TS}{umbral_N10_fraccion_ts.png}{$N_0=10$, $L=50\un{m}$, $k=1$.}
-\grafico{Cierre con 100 agentes: evacuación}{umbral_N100_evacuacion.png}{$N_0=100$, $L=50\un{m}$, $k=1$.}
-\grafico{Cierre con 100 agentes: cómputo}{umbral_N100_tiempo_computo.png}{$N_0=100$, $L=50\un{m}$, $k=1$.}
-\grafico{Cierre con 100 agentes: fracción TS}{umbral_N100_fraccion_ts.png}{$N_0=100$, $L=50\un{m}$, $k=1$.}
-\grafico{Cierre con 500 agentes: evacuación}{umbral_N500_evacuacion.png}{$N_0=500$, $L=50\un{m}$, $k=1$.}
-\grafico{Cierre con 500 agentes: cómputo}{umbral_N500_tiempo_computo.png}{$N_0=500$, $L=50\un{m}$, $k=1$.}
-\grafico{Cierre con 500 agentes: fracción TS}{umbral_N500_fraccion_ts.png}{$N_0=500$, $L=50\un{m}$, $k=1$.}
-\grafico{Densidad fija: evacuación}{densidad_evacuacion.png}{$\rho_0=0{,}2\un{m^{-2}}$, $L=\sqrt{N_0/\rho_0}$.}
-\grafico{Densidad fija: costo relativo}{densidad_costo_relativo.png}{$\rho_0=0{,}2\un{m^{-2}}$; cociente entre tiempos medios de motor.}
-\grafico{Habitación fija: evacuación}{lado_evacuacion.png}{$L=50\un{m}$; densidad inicial variable.}
-\grafico{TSDMD: realizaciones del caso base}{base_poblacion_tsdmd.png}{$N_0=500$, $L=50\un{m}$; diez realizaciones individuales.}
-\grafico{EDMD: realizaciones del caso base}{base_poblacion_edmd.png}{$N_0=500$, $L=50\un{m}$; diez realizaciones individuales.}
-\grafico{Híbrido: realizaciones del caso base}{base_poblacion_hybrid.png}{$N_0=500$, $L=50\un{m}$, $k=1$, $d^*=0{,}6\un{m}$; diez realizaciones individuales.}
+\grafico{Anticipación: fracción temporal TS}{barrido_fraccion_ts.png}{$N_0=500$; $d^*=0{,}6\un{m}$; $M=10$}
+\grafico{Cierre con 10 agentes: evacuación}{umbral_N10_evacuacion.png}{$N_0=10$; $k=1$; $M=10$}
+\grafico{Cierre con 10 agentes: cómputo}{umbral_N10_tiempo_computo.png}{$N_0=10$; $k=1$; $M=10$}
+\grafico{Cierre con 10 agentes: fracción TS}{umbral_N10_fraccion_ts.png}{$N_0=10$; $k=1$; $M=10$}
+\grafico{Cierre con 100 agentes: evacuación}{umbral_N100_evacuacion.png}{$N_0=100$; $k=1$; $M=10$}
+\grafico{Cierre con 100 agentes: cómputo}{umbral_N100_tiempo_computo.png}{$N_0=100$; $k=1$; $M=10$}
+\grafico{Cierre con 100 agentes: fracción TS}{umbral_N100_fraccion_ts.png}{$N_0=100$; $k=1$; $M=10$}
+\grafico{Cierre con 500 agentes: evacuación}{umbral_N500_evacuacion.png}{$N_0=500$; $k=1$; $M=10$}
+\grafico{Cierre con 500 agentes: cómputo}{umbral_N500_tiempo_computo.png}{$N_0=500$; $k=1$; $M=10$}
+\grafico{Cierre con 500 agentes: fracción TS}{umbral_N500_fraccion_ts.png}{$N_0=500$; $k=1$; $M=10$}
+\grafico{Densidad fija: evacuación}{densidad_evacuacion.png}{$\rho_0=0{,}2\un{m^{-2}}$; $k=1$, $d^*=0{,}6\un{m}$; $M=10$}
+\grafico{Densidad fija: costo relativo}{densidad_costo_relativo.png}{$\rho_0=0{,}2\un{m^{-2}}$; $k=1$, $d^*=0{,}6\un{m}$; $M=10$}
+\grafico{Habitación fija: evacuación}{lado_evacuacion.png}{$k=1$, $d^*=0{,}6\un{m}$; $M=10$}
+\grafico{TSDMD: realizaciones del caso base}{base_poblacion_tsdmd.png}{$N_0=500$; $M=10$}
+\grafico{EDMD: realizaciones del caso base}{base_poblacion_edmd.png}{$N_0=500$; $M=10$}
+\grafico{Híbrido: realizaciones del caso base}{base_poblacion_hybrid.png}{$N_0=500$; $k=1$, $d^*=0{,}6\un{m}$; $M=10$}
 \fi
 \end{document}
 
