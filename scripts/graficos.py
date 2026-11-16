@@ -235,7 +235,7 @@ def graficos_umbral(resumenes, carpeta):
         hibrido = [r for r in del_n if r["esquema"] == "hybrid"]
         if hibrido:
             barrido_parametro(hibrido, referencias(del_n), carpeta, f"umbral_N{n}", "d",
-                              "Distancia de cierre (m)", "log")
+                              r"$d^*$ (m)", "log")
     umbral_comparacion(resumenes, carpeta)
 
 
@@ -263,7 +263,7 @@ def umbral_comparacion(resumenes, carpeta):
                      [cociente(comun.media_y_desvio([r["t_evacuacion"] for r in por_d[(d,)]]), ref_ev) for d in ds],
                      [cociente(comun.media_y_desvio([r["t_motor"] for r in por_d[(d,)]]), ref_mo) for d in ds])
     for indice, (nombre, etiqueta, uno) in enumerate([
-            ("umbral_comparacion_fraccion_ts", Y_FRACCION_MEDIA, False),
+            ("umbral_comparacion_fraccion_ts", Y_FRACCION, False),
             ("umbral_comparacion_evacuacion", Y_EVACUACION_RELATIVA, True),
             ("umbral_comparacion_costo_relativo", Y_COSTO_RELATIVO, True)], start=1):
         figura, eje = plt.subplots(figsize=(7.5, 4.6))
@@ -277,7 +277,7 @@ def umbral_comparacion(resumenes, carpeta):
         todos = sorted({d for n in ns for d in curvas[n][0]})
         eje.set_xticks(todos, [f"{d:g}" for d in todos])
         eje.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
-        eje.set_xlabel("Distancia de cierre (m)")
+        eje.set_xlabel(r"$d^*$ (m)")
         eje.set_ylabel(etiqueta)
         eje.legend(fontsize=16)
         guardar(figura, nombre, carpeta)
