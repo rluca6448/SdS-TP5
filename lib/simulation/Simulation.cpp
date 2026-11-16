@@ -1,4 +1,5 @@
 #include "simulation/Simulation.h"
+#include "simulation/CpmRules.h"
 
 #include <random>
 #include <algorithm>
@@ -76,9 +77,9 @@ void Simulation::step() {
             particle.setRadius(minRadius);
             particle.setVelocity(directions[i].normalized() * escapeSpeed);
         } else {
-            const double radius = std::min(maxRadius, particle.getRadius() + maxRadius * dt / tau);
+            const double radius = cpm::recoveredRadius(particle.getRadius());
             particle.setRadius(radius);
-            const double speed = desiredSpeed * std::pow((radius - minRadius) / (maxRadius - minRadius), beta);
+            const double speed = cpm::speedForRadius(radius);
             const types::Vector2D direction = particle.getTarget() - particle.getPosition();
             particle.setVelocity(direction.normalized() * speed);
         }

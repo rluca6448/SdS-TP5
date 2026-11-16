@@ -1,0 +1,4 @@
+esquema,M,t_evac_media_s,t_evac_desvio_s,t_computo_media_s,t_computo_desvio_s,fraccion_ts_media,fraccion_ts_desvio
+TSDMD,10,232,2,0.77,0.01,1,0
+EDMD,10,336,3,12.9,0.2,0,0
+Híbrido,10,232,2,1.01,0.06,0.932,0.002

@@ -21,6 +21,9 @@ private:
     int cellsPerSide;
     double cellSize;
     std::vector<std::vector<std::size_t>> cells;
+    // Cells filled by the last rebuild: only these are cleared, so a rebuild
+    // costs O(N) instead of O(cells) (relevant with few agents in a big room).
+    std::vector<std::size_t> occupied;
 };
 
 }

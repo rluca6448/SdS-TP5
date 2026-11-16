@@ -18,12 +18,17 @@ int Grid::cellIndex(double coordinate) const {
 }
 
 void Grid::rebuild(const std::vector<types::Particle>& particles) {
-    for (std::vector<std::size_t>& cell : cells) {
-        cell.clear();
+    for (std::size_t cell : occupied) {
+        cells[cell].clear();
     }
+    occupied.clear();
     for (std::size_t i = 0; i < particles.size(); ++i) {
         const types::Vector2D position = particles[i].getPosition();
-        cells[cellIndex(position.y) * cellsPerSide + cellIndex(position.x)].push_back(i);
+        const std::size_t cell = static_cast<std::size_t>(cellIndex(position.y) * cellsPerSide + cellIndex(position.x));
+        if (cells[cell].empty()) {
+            occupied.push_back(cell);
+        }
+        cells[cell].push_back(i);
     }
 }
 

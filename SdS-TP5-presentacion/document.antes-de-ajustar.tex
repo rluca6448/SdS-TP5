@@ -1,0 +1,415 @@
+% Compilar desde esta carpeta: pdflatex main.tex (dos veces).
+% Plantilla TP5, problema 2, Grupo 11, comisión S2 (tomada del TP4).
+% Fuentes: TP5_Enunciado.pdf; GuiaPresentaciones.pdf; código local al 4/11/2026.
+% Modelo: Baglietto y Parisi, Physical Review E 83, 056117 (2011).
+% https://doi.org/10.1103/PhysRevE.83.056117
+% NO hay resultados inventados. Buscar PENDIENTE antes de entregar.
+% Las fórmulas CPM corresponden al TSDMD implementado. EDMD e híbrido faltan.
+% La guía del informe NO agrega captions ni bibliografía a esta presentación.
+% La corrección docente prima sobre la regla genérica de notación científica:
+% escribir 2, 500, 0,8; usar potencias solo cuando faciliten la lectura.
+% Ensayo sugerido (13 min): Introducción 1:30; Implementación 3:30;
+% Simulaciones 2:00; Resultados 5:15; Conclusiones 0:45.
+% Repartir ~4:20 por integrante; ensayar sin leer las diapositivas.
+\documentclass[aspectratio=169,20pt]{beamer}
+\geometry{paperwidth=320mm,paperheight=180mm}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usefonttheme{professionalfonts}
+\usefonttheme[onlymath]{serif}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{amsmath,amssymb,graphicx,booktabs,tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{animate}
+\usetheme{Frankfurt}
+\usecolortheme{beaver}
+\definecolor{darkred}{RGB}{153,0,0}
+\definecolor{edblue}{RGB}{35,94,166}
+\definecolor{hybridgreen}{RGB}{27,125,86}
+\setbeamercolor{frametitle}{bg=gray!10,fg=darkred}
+\setbeamercolor{title}{fg=darkred}
+\setbeamercolor{structure}{fg=darkred}
+\setbeamercolor{section in head/foot}{bg=darkred,fg=white}
+\setbeamertemplate{navigation symbols}{}
+\setbeamersize{text margin left=12mm,text margin right=12mm}
+\setbeamerfont{frametitle}{size=\fontsize{28}{33}\selectfont}
+\setbeamerfont{title}{size=\fontsize{34}{40}\selectfont}
+\setbeamertemplate{headline}{\begin{beamercolorbox}[wd=\paperwidth,ht=7mm,dp=2mm,leftskip=12mm]{section in head/foot}\fontsize{15}{18}\selectfont\insertsectionhead\end{beamercolorbox}}
+\setbeamertemplate{footline}{\hbox{\begin{beamercolorbox}[wd=.85\paperwidth,ht=6mm,dp=2mm,leftskip=12mm]{section in head/foot}\fontsize{13}{16}\selectfont TP5 -- Dinámica peatonal\end{beamercolorbox}\begin{beamercolorbox}[wd=.15\paperwidth,ht=6mm,dp=2mm,rightskip=8mm plus1fil]{section in head/foot}\fontsize{13}{16}\selectfont\insertpagenumber/\insertdocumentendpage\end{beamercolorbox}}}
+\setbeamertemplate{itemize items}[circle]
+\setlength{\parskip}{5mm}
+\newcommand{\vb}[1]{\mathbf{#1}}
+\newcommand{\un}[1]{\,\mathrm{#1}}
+\newcommand{\pendiente}[1]{\textcolor{darkred}{\textbf{[PENDIENTE: #1]}}}
+\newcommand{\dato}[1]{\textcolor{darkred}{\textbf{[#1]}}}
+\newcommand{\citaCPM}{\par\vfill{\fontsize{16}{19}\selectfont Baglietto y Parisi, Physical Review E 83 (2011)}}
+\newcommand{\leyenda}{\textcolor{darkred}{\textbf{TSDMD}}\quad\textcolor{edblue}{\textbf{EDMD}}\quad\textcolor{hybridgreen}{\textbf{Híbrido}}}
+% MODO: false = PDF para entregar, con fotograma + enlace explícito.
+% true = exposición, con secuencias embebidas y sin enlaces visibles.
+% animate requiere un visor compatible; probar en la computadora del aula.
+\newif\ifexposicion
+\exposicionfalse
+\newcommand{\figura}[2]{%
+	\IfFileExists{#1}{\includegraphics[width=\linewidth,height=.64\textheight,keepaspectratio]{#1}}{%
+		\fbox{\parbox[c][.55\textheight][c]{.92\linewidth}{\centering\pendiente{#2}\par\vspace{8mm}\texttt{\detokenize{#1}}}}}}
+% Animación: prefijo de PNG numerados 000,001,...; último índice; poster; URL.
+% Se colocan 10 cuadros/s; adaptar FPS a la frecuencia real de exportación.
+% Sustituir cada URL vacía por YouTube o Vimeo, nunca por Google Drive.
+\newcommand{\animacion}[4]{%
+	\ifexposicion
+	\IfFileExists{#1000.png}{\animategraphics[autoplay,loop,controls,width=\linewidth,height=.62\textheight,keepaspectratio]{10}{#1}{000}{#2}}{\figura{#3}{secuencia de animación embebida}}
+	\else
+	\figura{#3}{fotograma representativo}
+	\par\vspace{2mm}{\fontsize{16}{19}\selectfont\if\relax\detokenize{#4}\relax\pendiente{enlace público a YouTube o Vimeo}\else\url{#4}\fi}
+	\fi}
+% Cada gráfico ocupa una diapositiva. Parámetros al costado, sin caption.
+% Exportar ejes, marcas y leyendas legibles (~20 pt a tamaño final).
+% Marcar datos con símbolos; barras explícitas; no interpolar con splines.
+\newcommand{\resultado}[4]{\begin{frame}{#1}\begin{columns}[c]\begin{column}{.74\textwidth}\centering\figura{#2}{#3}\end{column}\begin{column}{.24\textwidth}#4\end{column}\end{columns}\end{frame}}
+\AtBeginSection[]{\begin{frame}\centering\usebeamerfont{title}\textcolor{darkred}{\insertsectionhead}\end{frame}}
+\title{Dinámica peatonal}
+\subtitle{Evacuación con esquemas por pasos, por eventos e híbrido}
+\author{Grupo 11\\Santiago Diaz -- 63058\quad Lautaro Gazzaneo -- 61484\\Luca Maximiliano Rossi -- 63730}
+\institute{Simulación de Sistemas -- ITBA}
+\date{13 de noviembre de 2026}
+\begin{document}
+	\begin{frame}\titlepage\end{frame}
+	
+	\section{Introducción}
+	% Máximo tres diapositivas de contenido: modelo general, sin geometría particular.
+	\begin{frame}{Modelo de partículas contráctiles (CPM)}
+		Peatones representados por discos con posición $\vb{x}_i$, radio $r_i$ y target $\vb{q}_i$.
+		\[
+		r_{\min}\le r_i\le r_{\max},\qquad
+		\widehat{\vb{e}}_i^{\,\mathrm{tar}}=
+		\frac{\vb{q}_i-\vb{x}_i}{\lVert\vb{q}_i-\vb{x}_i\rVert}
+		\]
+		\[
+		v_d(r_i)=v_d^{\max}\left(\frac{r_i-r_{\min}}{r_{\max}-r_{\min}}\right)^\beta
+		\]
+		\begin{itemize}
+			\item Sin contacto: recuperación del radio y movimiento hacia el target.
+			\item Con contacto: contracción y movimiento de escape.
+		\end{itemize}
+		\citaCPM
+	\end{frame}
+	
+	\begin{frame}{Contacto y dirección de escape}
+		\[
+		\mathcal C_i=\{j\ne i:\lVert\vb{x}_i-\vb{x}_j\rVert\le r_i+r_j\},\qquad
+		\mathcal W_i=\{w:\lVert\vb{x}_i-\vb{p}_{iw}\rVert\le r_i\}
+		\]
+		$\vb{p}_{iw}$: punto más cercano de la pared $w$, incluidos sus extremos.
+		\[
+		\vb{s}_i=\sum_{j\in\mathcal C_i}\frac{\vb{x}_i-\vb{x}_j}{\lVert\vb{x}_i-\vb{x}_j\rVert}
+		+\sum_{w\in\mathcal W_i}\frac{\vb{x}_i-\vb{p}_{iw}}{\lVert\vb{x}_i-\vb{p}_{iw}\rVert}
+		\]
+		\[
+		r_i^{n+1}=r_{\min},\qquad \vb{v}_i^{n+1}=v_e\frac{\vb{s}_i}{\lVert\vb{s}_i\rVert}
+		\quad\text{si hay contacto}
+		\]
+		Convención implementada: un vector de norma cero se normaliza a $\vb{0}$.
+		\citaCPM
+	\end{frame}
+	
+	\begin{frame}{Recuperación y avance del modelo}
+		Sin contacto en el estado $n$:
+		\[
+		r_i^{n+1}=\min\left(r_{\max},r_i^n+\frac{r_{\max}}{\tau}\Delta t\right),\qquad
+		\vb{v}_i^{n+1}=v_d(r_i^{n+1})\widehat{\vb{e}}_i^{\,\mathrm{tar}}
+		\]
+		Para todos los agentes:
+		\[
+		\vb{x}_i^{n+1}=\vb{x}_i^n+\vb{v}_i^{n+1}\Delta t,\qquad
+		\Delta t=\frac{r_{\min}}{2\max(v_d^{\max},v_e)}
+		\]
+		$\tau$: escala de recuperación.\quad $\beta$: relación entre radio y rapidez.
+		
+		El paso temporal es parte de las reglas de CPM.
+		\citaCPM
+	\end{frame}
+	
+	\section{Implementación}
+	\begin{frame}{Arquitectura del motor}
+		\centering
+		\begin{tikzpicture}[node distance=22mm and 18mm, every node/.style={font=\normalsize}, box/.style={draw=darkred,thick,align=center,minimum height=18mm,text width=66mm}, >=Stealth]
+			\node[box] (s) {Simulation\\estado y reloj};
+			\node[box,below left=of s] (p) {Particle\\posición, radio, target};
+			\node[box,below=of s] (b) {Board\\paredes y puerta};
+			\node[box,below right=of s] (g) {Grid\\candidatos a contacto};
+			\draw[->,thick] (s)--(p);\draw[->,thick] (s)--(b);\draw[->,thick] (s)--(g);
+		\end{tikzpicture}
+		\par\vspace{7mm}
+		CIM: celdas de lado $\ell\ge2r_{\max}$; celda propia y ocho vecinas.
+		
+		\pendiente{agregar la cola de eventos y el controlador híbrido reales}
+		% Mostrar únicamente el motor. No incluir I/O, animación ni postprocesamiento.
+	\end{frame}
+	
+	\begin{frame}{Actualización por pasos: TSDMD}
+		\begin{enumerate}
+			\item Reconstruir la grilla con el estado $n$.
+			\item Detectar todos los contactos y sumar direcciones de escape.
+			\item Calcular radios y velocidades del estado $n+1$.
+			\item Desplazar simultáneamente los agentes.
+			\item Actualizar targets, retirar agentes y avanzar el reloj.
+		\end{enumerate}
+		\[
+		t_{n+1}=t_n+\Delta t,\qquad \Delta t=\frac{1}{30}\un{s}
+		\]
+		Los contactos se evalúan antes de contraer o recuperar radios.
+	\end{frame}
+	
+	\begin{frame}{Actualización por eventos: EDMD}
+		\pendiente{algoritmo definitivo de EDMD puro}
+		\begin{itemize}
+			\item Eventos: contacto entre agentes, pared, puerta y recuperación.
+			\item Trayectoria y radio utilizados para predecir cada evento.
+			\item Regla de colisión y recuperación posterior dentro de EDMD.
+			\item Eventos simultáneos e invalidación de predicciones anteriores.
+		\end{itemize}
+		% Reemplazar esta lista por las ecuaciones y el flujo efectivamente implementados.
+		% EDMD puro no queda definido diciendo que al chocar se usa TSDMD.
+		% Una ecuación balística con radios constantes solo vale en movimiento libre
+		% recuperado; no usarla sin justificar para radios o velocidades variables.
+	\end{frame}
+	
+	\begin{frame}{Híbrido: criterio de cambio por agente}
+		\pendiente{definir el parámetro principal $\lambda$, sus unidades y el criterio}
+		\[
+		s_i(t)\in\{\mathrm{ED},\mathrm{TS}\}
+		\]
+		\begin{itemize}
+			\item ED $\rightarrow$ TS: \dato{condición matemática y umbral}.
+			\item TS $\rightarrow$ ED: \dato{condición matemática y recuperación requerida}.
+			\item \dato{Tratamiento del estado inicial y de cambios simultáneos}.
+		\end{itemize}
+		% Sustituir por condiciones necesarias y suficientes, no solo etiquetas como
+		% "baja densidad" o "cerca de la puerta". Definir vecinos y distancias si se usan.
+		% No se propone aquí un criterio como si ya hubiese sido implementado.
+	\end{frame}
+	
+	\begin{frame}{Híbrido: sincronización y contactos mixtos}
+		\pendiente{ecuaciones y orden de actualización del algoritmo implementado}
+		\begin{itemize}
+			\item Relación entre el próximo evento y la grilla temporal de CPM.
+			\item Predicción de un contacto entre un agente ED y uno TS.
+			\item Actualización de posiciones, radios y velocidades al sincronizar.
+			\item Invalidación de eventos y prevención de contactos omitidos.
+		\end{itemize}
+		% Precisar qué ocurre si un evento cae dentro de un paso CPM. No reducir dt
+		% arbitrariamente: el enunciado lo define como parte del modelo.
+		% Añadir aquí una línea temporal editable del algoritmo definitivo.
+	\end{frame}
+	
+	\section{Simulaciones}
+	\begin{frame}{Habitación y condiciones iniciales}
+		\begin{columns}[c]
+			\begin{column}{.47\textwidth}\centering
+				\begin{tikzpicture}[x=14mm,y=14mm,>=Stealth]
+					\draw[very thick] (0,0)--(0,6)--(6,6)--(6,0)--(3.4,0);
+					\draw[very thick] (0,0)--(2.6,0);
+					\draw[<->] (-.6,0)--node[left]{$L$}(-.6,6);
+					\draw[<->] (2.6,-.45)--node[below]{$d$}(3.4,-.45);
+					\foreach \x/\y in {1/1.6,1.8/4.7,4.8/4.9,4.9/2.4,3.1/3.2,1/3.4}{\fill[darkred] (\x,\y) circle (.11);}
+					\fill[edblue] (3,0) circle (.08);\fill[edblue] (3,-1.25) circle (.08);
+					\draw[->,thick,edblue] (4.8,4.9)--(3.5,1.3);
+					\node[right] at (3.3,-1.25) {$\vb{q}_{\mathrm{ext}}$};
+					\node at (3,6.5) {Esquema sin escala};
+				\end{tikzpicture}
+			\end{column}
+			\begin{column}{.50\textwidth}
+				$N_0=500$, $L=50\un{m}$, $d=0{,}8\un{m}$.
+				
+				Centros uniformes al azar, sin superposiciones.
+				
+				$r_i(0)=r_{\max}$; rapidez inicial $v_d^{\max}$.
+				\[
+				\vb{q}_{\mathrm{puerta}}=(L/2,0),\qquad
+				\vb{q}_{\mathrm{ext}}=(L/2,-1\un{m})
+				\]
+				Cambio de target al cruzar la abertura.
+				
+				Retiro implementado: $y_i\le-1\un{m}$.
+			\end{column}
+		\end{columns}
+		% El dibujo es geométrico, no una realización simulada. Los puntos no representan N.
+		% Verificar el retiro final contra la interpretación del enunciado (distancia 1 m).
+	\end{frame}
+	
+	\begin{frame}{Parámetros y diseño de las simulaciones}
+		\begin{columns}[T]
+			\begin{column}{.47\textwidth}
+				\begin{tabular}{ll}\toprule
+					Parámetro&Valor\\\midrule
+					$r_{\min},r_{\max}$&$0{,}10;\ 0{,}25\un{m}$\\
+					$v_d^{\max}=v_e$&$1{,}5\un{m/s}$\\
+					$\tau$&$0{,}5\un{s}$\\
+					$\beta$&$0{,}9$\\
+					$\Delta t$&$1/30\un{s}$\\
+					\bottomrule\end{tabular}
+			\end{column}
+			\begin{column}{.50\textwidth}
+				$M=\dato{cantidad}\ge10$ realizaciones por configuración.
+				
+				Mismas semillas entre esquemas; semillas distintas entre realizaciones.
+				
+				Final: todos los agentes retirados.
+				
+				Estados para animación: $\Delta t_2=0{,}1\un{s}$ en TSDMD.
+			\end{column}
+		\end{columns}
+		\vfill
+		Barridos: $\lambda\in\dato{valores}$; $N_0\in\dato{valores entre 100 y 1000}$.
+		% El intervalo de N es la sugerencia del enunciado. Reemplazar por los valores usados.
+		% M significa realizaciones, no agentes ni instantes. Documentar semillas en notas.
+	\end{frame}
+	
+	\begin{frame}{Observables: población y tiempo de evacuación}
+		\[
+		N_{\mathrm{int}}(t)=\#\{i\text{ activo}:y_i(t)>0\},\qquad
+		f_{\mathrm{ev}}(t)=1-\frac{N_{\mathrm{int}}(t)}{N_0}
+		\]
+		\[
+		T_{\mathrm{ev}}=\max_i t_i^{\mathrm{salida}}
+		\]
+		$t_i^{\mathrm{salida}}$: último cruce de $y>0$ a $y\le0$ por la abertura del agente $i$, antes de su retiro.
+		
+		En TSDMD se registra el final del paso del cruce: resolución $\Delta t$.
+		
+		Se promedia $T_{\mathrm{ev}}$ sobre las $M$ realizaciones de cada configuración.
+		% No confundir evacuación con retiro en y <= -1 m. Una reentrada vuelve a contar
+		% en población. Si se usan t90/t100, habilitar las definiciones del apéndice.
+	\end{frame}
+	
+	\begin{frame}{Observables: uso de esquemas y tiempo de ejecución}
+		\[
+		f_{\mathrm{TS}}(t)=\frac{N_{\mathrm{TS,act}}(t)}{N_{\mathrm{act}}(t)},\qquad
+		f_{\mathrm{ED}}(t)=1-f_{\mathrm{TS}}(t),\quad N_{\mathrm{act}}(t)>0
+		\]
+		Se cuentan todos los agentes activos, incluidos los que están saliendo.
+		\[
+		T_{\mathrm{CPU}}=t_{\mathrm{reloj,fin}}-t_{\mathrm{reloj,inicio}}
+		\]
+		Protocolo propuesto: medir el motor desde el estado inicial hasta el último retiro; excluir animación, postproceso y escritura de estados.
+		
+		Puntos: media entre $M$ realizaciones. Barras propuestas: desvío estándar muestral entre esas realizaciones.
+		% Confirmar e implementar este protocolo antes de medir. Si se cambia la barra
+		% por error estándar o intervalo de confianza, cambiar TODAS las leyendas.
+		% No dibujar f_TS=0 cuando N_act=0: allí el cociente no está definido.
+	\end{frame}
+	
+	\section{Resultados}
+	% Un color por esquema en gráficos: TS rojo, ED azul, híbrido verde.
+	% Dentro de animaciones híbridas: agentes TS rojos y agentes ED azules.
+	% No mostrar promedios temporales con bandas entre realizaciones: elegir una
+	% semilla identificada; promediar solo los escalares en las comparaciones.
+	\begin{frame}{Dinámica de evacuación: comparación de esquemas}
+		\begin{columns}[c]
+			\begin{column}{.74\textwidth}
+				\only<1>{\animacion{animaciones/ts-}{060}{figuras/ts-fotograma.png}{}}
+				\only<2>{\animacion{animaciones/ed-}{060}{figuras/ed-fotograma.png}{}}
+				\only<3>{\animacion{animaciones/hibrido-}{060}{figuras/hibrido-fotograma.png}{}}
+			\end{column}
+			\begin{column}{.24\textwidth}
+				\only<1>{\textcolor{darkred}{\textbf{TSDMD}}}
+				\only<2>{\textcolor{edblue}{\textbf{EDMD}}}
+				\only<3>{\textcolor{hybridgreen}{\textbf{Híbrido}}\\$\lambda=\dato{valor}$}
+				\par $N_0=500$\\$L=50\un{m}$\\$d=0{,}8\un{m}$
+				\par Semilla: \dato{valor}\\Aceleración: \dato{factor}
+				\only<3>{\par\textcolor{darkred}{TS: rojo}\\\textcolor{edblue}{ED: azul}}
+			\end{column}
+		\end{columns}
+		% En el PDF se exportan tres páginas numeradas por separado, una por esquema.
+	\end{frame}
+	
+	\resultado{Población durante la evacuación}{figuras/poblacion.pdf}{tres curvas de una misma semilla}{$N_0=500$\\$L=50\un{m}$\par Semilla: \dato{valor}\par $\lambda=\dato{valor}$\par Ejes:\\Tiempo (s)\\Población interior}
+	% Marcar T_ev sobre las curvas. Colores TS/ED/híbrido constantes en todo el deck.
+	
+	\resultado{Fracción de agentes por esquema}{figuras/fracciones.pdf}{fracciones TS y ED de una realización híbrida}{$N_0=500$\\$L=50\un{m}$\par Semilla: \dato{valor}\\$\lambda=\dato{valor}$\par\textcolor{darkred}{TS: rojo}\\\textcolor{edblue}{ED: azul}\par Ejes:\\Tiempo (s)\\Fracción activa}
+	
+	\resultado{Tiempo de evacuación por esquema}{figuras/evacuacion-esquemas.pdf}{media y barras de error para los tres esquemas}{$N_0=500$\\$L=50\un{m}$\\$\lambda=\dato{valor}$\par $M=\dato{cantidad}$\par Barras: desvío estándar\par Eje vertical:\\Evacuación (s)}
+	
+	\resultado{Tiempo de ejecución por esquema}{figuras/cpu-esquemas.pdf}{media y barras de error para los tres esquemas}{$N_0=500$\\$L=50\un{m}$\par $M=\dato{cantidad}$\par Equipo:\\\dato{CPU y RAM}\par\dato{SO, compilador y optimización}\par Barras: desvío estándar}
+	% Incluir medición con el mismo equipo y protocolo. Usar nombre corto del equipo
+	% y hardware completo en comentarios si la etiqueta no entra; no achicar texto.
+	
+	\begin{frame}{Criterio híbrido: dinámica en los extremos del barrido}
+		\begin{columns}[c]
+			\begin{column}{.74\textwidth}
+				\only<1>{\animacion{animaciones/lambda-min-}{060}{figuras/lambda-min.png}{}}
+				\only<2>{\animacion{animaciones/lambda-max-}{060}{figuras/lambda-max.png}{}}
+			\end{column}
+			\begin{column}{.24\textwidth}
+				\only<1>{$\lambda=\dato{mínimo}$}
+				\only<2>{$\lambda=\dato{máximo}$}
+				\par $N_0=500$\\$L=50\un{m}$\par Misma semilla: \dato{valor}\par\textcolor{darkred}{TS: rojo}\\\textcolor{edblue}{ED: azul}\par Aceleración: \dato{factor}
+			\end{column}
+		\end{columns}
+	\end{frame}
+	
+	\resultado{Criterio híbrido: población en los extremos}{figuras/poblacion-lambda.pdf}{dos curvas típicas, con sus tiempos de evacuación}{$N_0=500$\\$L=50\un{m}$\par Semilla: \dato{valor}\par $\lambda_{\min}=\dato{valor}$\\$\lambda_{\max}=\dato{valor}$\par Identificar cada curva con $\lambda$}
+	
+	\resultado{Tiempo de evacuación frente al criterio híbrido}{figuras/evacuacion-lambda.pdf}{media y barras frente a lambda; referencias TS y ED}{$N_0=500$\\$L=50\un{m}$\par $M=\dato{cantidad}$\par Barras: desvío estándar\par Eje horizontal:\\\dato{parámetro y unidad}\par Eje vertical:\\Evacuación (s)}
+	
+	\resultado{Tiempo de ejecución frente al criterio híbrido}{figuras/cpu-lambda.pdf}{media y barras frente a lambda; referencias TS y ED}{$N_0=500$\\$L=50\un{m}$\par $M=\dato{cantidad}$\par Mismo equipo y protocolo\par Barras: desvío estándar\par Eje vertical:\\Ejecución (s)}
+	% Referencias TS y ED con media y dispersión claramente identificadas.
+	% No afirmar "óptimo" por inspección: definir precisión física y criterio de costo.
+	
+	\begin{frame}{Escalamiento: configuraciones y dinámica}
+		\begin{columns}[c]
+			\begin{column}{.68\textwidth}
+				\only<1>{\animacion{animaciones/escala-rho-}{060}{figuras/escala-rho.png}{}}
+				\only<2>{\animacion{animaciones/escala-L-}{060}{figuras/escala-L.png}{}}
+			\end{column}
+			\begin{column}{.30\textwidth}
+				\only<1>{Densidad inicial constante:\[\rho_0=0{,}2\un{m^{-2}}\]\[L(N_0)=\sqrt{N_0/\rho_0}\]}
+				\only<2>{Habitación constante:\[L=50\un{m}\]\[\rho_0(N_0)=N_0/L^2\]}
+				Puerta: $d=0{,}8\un{m}$\par $N_0=\dato{valor}$\\Esquema: \dato{valor}\\Semilla: \dato{valor}\par $\lambda=\dato{fijo}$
+			\end{column}
+		\end{columns}
+	\end{frame}
+	
+	\resultado{Escalamiento: población en casos extremos}{figuras/poblacion-escala.pdf}{curvas típicas para N mínimo y máximo en cada variante}{$N_{\min}=\dato{valor}$\\$N_{\max}=\dato{valor}$\par Semilla: \dato{valor}\par Identificar $N_0$, variante y esquema\par Ejes:\\Tiempo (s)\\Población interior}
+	% Si seis curvas por variante no son legibles, usar dos diapositivas, una por
+	% variante, conservando mismo tamaño de gráfico y descontando tiempo de exposición.
+	
+	\resultado{Escalamiento a densidad inicial constante}{figuras/cpu-N-rho.pdf}{ejecución vs N para los tres esquemas, con barras}{$\rho_0=0{,}2\un{m^{-2}}$\par $d=0{,}8\un{m}$\par $\lambda=\dato{fijo}$\\$M=\dato{cantidad}$\par Barras: desvío estándar\par Ejes:\\Agentes iniciales\\Ejecución (s)}
+	
+	\resultado{Escalamiento a tamaño de habitación constante}{figuras/cpu-N-L.pdf}{ejecución vs N para los tres esquemas, con barras}{$L=50\un{m}$\par $d=0{,}8\un{m}$\par $\lambda=\dato{fijo}$\\$M=\dato{cantidad}$\par Barras: desvío estándar\par Ejes:\\Agentes iniciales\\Ejecución (s)}
+	% No inferir complejidad algorítmica solo de T_CPU total: al cambiar N también
+	% puede cambiar el tiempo físico de evacuación. Si se ajusta una ley, incorporar
+	% función motivada, objetivo minimizado, rango, parámetros con incertidumbre y
+	% calidad del ajuste; no introducir una potencia o un polinomio arbitrarios.
+	
+	\section{Conclusiones}
+	\begin{frame}{Conclusiones}
+		\pendiente{completar únicamente con resultados mostrados}
+		\begin{itemize}
+			\item \dato{Diferencia de evacuación de EDMD e híbrido respecto de TSDMD, con incertidumbre}.
+			\item \dato{Cambio medido en tiempo de ejecución y criterio híbrido utilizado}.
+			\item \dato{Comportamiento medido al variar N en las dos variantes}.
+		\end{itemize}
+		% Reemplazar los tres marcadores por conclusiones concretas y respaldadas.
+		% No concluir superioridad, conservación de energía ni distribución de Boltzmann.
+		% No convertir tareas pendientes o hipótesis sin comprobar en conclusiones.
+	\end{frame}
+	
+	% OPCIONAL: habilitar solo si se usan estos observables en los resultados.
+	% No pertenecen al requisito central del TP5; se dejan correctamente definidos
+	% para evitar la ambigüedad señalada en la devolución del TP4.
+	\iffalse
+	\begin{frame}{Tiempos de primer alcance}
+		\[
+		t_{90}=\min\{t_n:f_{\mathrm{ev}}(t_n)\ge0{,}9\},\qquad
+		t_{100}=\min\{t_n:f_{\mathrm{ev}}(t_n)=1\}
+		\]
+		Si el umbral no se alcanza, el tiempo no está observado.
+		
+		Una eventual reentrada puede hacer que $t_{100}\ne T_{\mathrm{ev}}$.
+		
+		Se promedia cada tiempo sobre las $M$ realizaciones, nunca sobre agentes.
+	\end{frame}
+	\fi
+\end{document}
