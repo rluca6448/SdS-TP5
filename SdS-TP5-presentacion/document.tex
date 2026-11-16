@@ -433,6 +433,27 @@ $M=10$ realizaciones por configuración.
 	0{,}00084\un{s}$ ($N_0=10$), $0{,}022\un{s}$ ($N_0=100$)
 	y $0{,}80\un{s}$ ($N_0=500$).}
 \end{frame}
+\begin{frame}{Radio de interacción: evacuación y cómputo relativos a EDMD}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.48\textwidth}
+      \centering
+      \textbf{Evacuación} $T_{\mathrm{ev}}/T_{\mathrm{ev}}^{\mathrm{EDMD}}$\par\smallskip
+      \includegraphics[width=\linewidth]{umbral_comparacion_evacuacion_edmd.png}
+    \end{column}
+    \begin{column}{.48\textwidth}
+      \centering
+      \textbf{Cómputo} $T_{\mathrm{motor}}/T_{\mathrm{motor}}^{\mathrm{EDMD}}$\par\smallskip
+      \includegraphics[width=\linewidth]{umbral_comparacion_costo_relativo_edmd.png}
+    \end{column}
+  \end{columns}
+  \par\medskip
+  \centering
+  \notaBreve{$T_{\mathrm{ev}}^{\mathrm{EDMD}}\text{: }33\un{s}$ ($N_0=10$),
+    $75\un{s}$ ($N_0=100$) y $336\un{s}$ ($N_0=500$).\\
+    $T_{\mathrm{motor}}^{\mathrm{EDMD}}\text{: }0{,}0010\un{s}$ ($N_0=10$),
+    $0{,}22\un{s}$ ($N_0=100$) y $13{,}0\un{s}$ ($N_0=500$).}
+  % Referencia EDMD: lado_resumen.csv, L=50 m. Numerador: umbral_N*_resumen.csv.
+\end{frame}
 \grafico{Radio de interacción: porcentaje de TS}{umbral_comparacion_fraccion_ts.png}{}
 \grafico{Escalamiento a densidad constante}{densidad_costo_relativo.png}{$L$ varía de $5$ a $100\un{m}$.}
 \grafico{Costo relativo a TSDMD con L constante}{lado_costo_relativo.png}{}
