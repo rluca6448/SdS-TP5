@@ -53,7 +53,7 @@
 \newcommand{\video}[4]{\begin{frame}{#1}\centering\ifentrega
   \includegraphics[width=.98\textwidth,height=.78\textheight,keepaspectratio]{#2}\par
   \ifx#4\empty\notaBreve{\textcolor{magenta}{(insertar link)}}\else\notaBreve{\expandafter\url\expandafter{#4}}\fi
-  \else\movie[poster,showcontrols]{\includegraphics[width=.98\textwidth,height=.78\textheight,keepaspectratio]{#2}}{#3}\par\notaBreve{\textcolor{magenta}{(insertar link)}}\fi\end{frame}}
+  \else\movie[poster,showcontrols]{\includegraphics[width=.98\textwidth,height=.78\textheight,keepaspectratio]{#2}}{#3}\par\notaBreve{\expandafter\url\expandafter{#4}}\fi\end{frame}}
 \tikzset{bloque/.style={draw=darkred,thick,align=center,minimum height=15mm,text width=65mm},flecha/.style={->,very thick,>=Stealth}}
 \AtBeginSection[]{\begin{frame}\centering\usebeamerfont{title}\textcolor{darkred}{\insertsectionhead}\end{frame}}
 \title{Dinámica peatonal}
@@ -131,7 +131,6 @@
 \draw[flecha] (r.north) to[bend right=35] node[above]{nuevo contacto} (e.north);
 \end{tikzpicture}
 \vfill
-\notaBreve{Contacto persistente al terminar el escape: nuevo escape de duración $\Delta t$.}
 % Decisión propia: escape continuo de duración dt; un contacto nuevo puede
 % reiniciarlo. No se aplican leyes de colisión elástica de discos duros.
 \end{frame}
@@ -262,7 +261,7 @@ Se toma la raíz menor con $h>0$: tiempo exacto.
 \node[ED,right,align=left] at (4.7,-1.2){fuera:\\sigue ED};
 \end{scope}
 \end{tikzpicture}
-\vfill\notaBreve{$k$: anticipación en pasos;\ $d^*$: radio de interacción del cierre (diapositiva siguiente). El cambio de esquema no aplica anticipadamente la contracción.}
+\vfill\notaBreve{$k$: anticipación en pasos;\ $d^*$: radio de interacción del cierre (diapositiva siguiente)}
 % Incluye contactos con paredes. La clasificación real comprueba los vuelos
 % tentativos de los TS recuperados y repite el cierre si aparecen nuevas semillas.
 % k=0 existe en el barrido; evitar afirmar entrada estrictamente previa para k=0.
@@ -339,9 +338,6 @@ $\tau$, $\beta$&$0{,}5\un{s}$, $0{,}9$\\
 $\Delta t$, $\Delta$&$1/30\un{s}$, $0{,}05\un{s}$\\\bottomrule
 \end{tabular}
 \par\notaBreve{Centros aleatorios sin superposición; $r_i(0)=r_{\max}$.}
-\[
- \vb q_{\mathrm{puerta}}=(L/2,0),\qquad\vb q_{\mathrm{ext}}=(L/2,-1\un{m})
-\]
 \end{column}
 \end{columns}
 \end{frame}
@@ -356,8 +352,8 @@ Densidad fija & $N_0=5\ldots2000$ & $L=\sqrt{N_0/\rho_0}$; $\rho_0=0{,}2\un{m^{-
 Habitación fija & $N_0=5\ldots1500$ & $L=50\un{m}$\\\bottomrule
 \end{tabular}
 \vfill
-$M=10$ realizaciones por configuración; medias y desvíos estándar muestrales.
-\par\notaBreve{Híbrido base y escalamiento: $k=1$, $d^*=0{,}6\un{m}$. Puerta fija en todos los estudios.}
+$M=10$ realizaciones por configuración.
+\par\notaBreve{Puerta fija en todos los estudios.}
 % M verificado en CSV. Mismas semillas se admiten por la inicialización compartida;
 % los CSV resumidos no conservan el listado efectivo de semillas ni el hardware.
 \end{frame}
@@ -367,14 +363,13 @@ $M=10$ realizaciones por configuración; medias y desvíos estándar muestrales.
  N_{\mathrm{int}}(t)=\#\{i\ \text{activo}:y_i(t)>0\},\qquad
  T_{\mathrm{ev}}=\max_i t_i^{\mathrm{salida}}
 \]
-\notaBreve{$t_i^{\mathrm{salida}}$: último cruce hacia afuera por la abertura, antes del retiro.}
+\notaBreve{$t_i^{\mathrm{salida}}$: tiempo de salida de la caja.}
 \vspace{5mm}
 \[
  T_{\mathrm{motor}}=\sum_{\text{llamadas a step}}\bigl(t_{\mathrm{fin}}^{\mathrm{reloj}}-t_{\mathrm{inicio}}^{\mathrm{reloj}}\bigr),\qquad
  C=\frac{T_{\mathrm{motor}}}{T_{\mathrm{motor}}^{\mathrm{TSDMD}}}
 \]
 \vfill
-Se promedian los tiempos de las $M$ realizaciones de cada configuración.
 % Medición exacta según src/main.cpp, steady_clock. No llamarla tiempo de todo
 % el proceso, ni afirmar que incluye scheduleAll() del constructor EDMD.
 \end{frame}
@@ -384,12 +379,9 @@ Se promedian los tiempos de las $M$ realizaciones de cada configuración.
  f_{\mathrm{TS}}(t_n)=\frac{N_{\mathrm{TS,act}}(t_n)}{N_{\mathrm{act}}(t_n)},\qquad
  f_{\mathrm{ED}}(t_n)=1-f_{\mathrm{TS}}(t_n)
 \]
-\notaBreve{Agentes activos: interiores y exteriores aún no retirados. $N_{\mathrm{act}}>0$.}
+\notaBreve{Toda particula no retirada: $N_{\mathrm{act}}>0$.}
 \par\vspace{7mm}
-\textcolor{HY}{Fracción temporal de una realización}
-\par Promedio de $f_{\mathrm{TS}}$ sobre las muestras equiespaciadas con agentes activos.
 \vfill
-\notaBreve{Barridos: media de ese escalar entre realizaciones; barras = desvío entre realizaciones.}
 % comun.fraccion_ts_media incluye t=0; base_fraccion_ts.png lo excluye por ser
 % el estado previo a clasificar (todos inicialmente TS). Aclarar si preguntan.
 \end{frame}
@@ -397,11 +389,11 @@ Se promedian los tiempos de las $M$ realizaciones de cada configuración.
 \section{Resultados}
 % Figuras existentes, sin redibujar ni modificar valores. No añadir captions.
 % Las condiciones se dan en el encabezado, no en párrafos junto a la imagen.
-\video{Evacuación TSDMD}{animaciones/fotogramas_tsdmd/tsdmd_t0030.00.png}{tsdmd.mp4}{\urlTS}
-\video{Evacuación EDMD}{animaciones/fotogramas_edmd/edmd_t0030.00.png}{edmd.mp4}{\urlED}
-\video{Evacuación híbrida}{animaciones/fotogramas_hybrid/hybrid_t0030.00.png}{hybrid.mp4}{\urlHY}
+\video{Evacuación TSDMD}{animaciones/fotogramas_tsdmd/tsdmd_t0030.00.png}{tsdmd.mp4}{https://youtu.be/SMY3F5_Luxw}
+\video{Evacuación EDMD}{animaciones/fotogramas_edmd/edmd_t0030.00.png}{edmd.mp4}{https://youtu.be/CZd1lrxaji0}
+\video{Evacuación híbrida}{animaciones/fotogramas_hybrid/hybrid_t0030.00.png}{hybrid.mp4}{https://youtu.be/-psuJtkw2a0}
 \grafico{Población: comparación de esquemas}{base_poblacion_comparacion.png}{}
-\grafico{Híbrido: fracción TS durante la evacuación}{base_fraccion_ts.png}{$f_{\mathrm{TS}}(t_n)=N_{\mathrm{TS,act}}(t_n)/N_{\mathrm{act}}(t_n)$;\quad $N_0=500$, $L=50\un{m}$, $k=1$, $d^*=0{,}6\un{m}$; 10 realizaciones.}
+\grafico{Híbrido: fracción TS durante la evacuación}{base_fraccion_ts.png}{}
 \begin{frame}{Tiempos de evacuación y de cómputo}
 	\begin{columns}[T,onlytextwidth]
 		\begin{column}{.48\textwidth}
@@ -418,13 +410,11 @@ Se promedian los tiempos de las $M$ realizaciones de cada configuración.
 	
 	\medskip
 	\centering
-	\notaBreve{$N_0=500$, $L=50\un{m}$; 10 realizaciones; barras: desvío estándar.}
 \end{frame}
-\grafico{Anticipación: tiempo de evacuación}{barrido_evacuacion.png}{$N_0=500$, $L=50\un{m}$, $d^*=0{,}6\un{m}$. EDMD (fuera de escala): $T_{\mathrm{ev}}=336\pm3\un{s}$.}
-\grafico{Anticipación: tiempo de cómputo}{barrido_tiempo_computo.png}{$N_0=500$, $L=50\un{m}$, $d^*=0{,}6\un{m}$. EDMD (fuera de escala): $T_{\mathrm{motor}}=12{,}9\pm0{,}2\un{s}$.}
-\grafico{Distancia de cierre: participación de TS}{umbral_comparacion_fraccion_ts.png}{$L=50\un{m}$, $k=1$; 10 realizaciones por punto.}
+\grafico{Anticipación: tiempo de evacuación}{barrido_evacuacion.png}{}
+\grafico{Anticipación: tiempo de cómputo}{barrido_tiempo_computo.png}{}
+\grafico{Distancia de cierre: participación de TS}{umbral_comparacion_fraccion_ts.png}{}
 \begin{frame}{Distancia de cierre: evacuación y cómputo relativos al TSDMD}
-	\notaBreve{$L=50\un{m}$, $k=1$; cada cociente contra el TSDMD con el mismo $N_0$; barras: propagación de los desvíos.}
 	\begin{columns}[T,onlytextwidth]
 		\begin{column}{.48\textwidth}
 			\centering
@@ -437,11 +427,10 @@ Se promedian los tiempos de las $M$ realizaciones de cada configuración.
 			\includegraphics[width=\linewidth]{umbral_comparacion_costo_relativo.png}
 		\end{column}
 	\end{columns}
-	\notaBreve{EDMD, $T_{\mathrm{motor}}/T_{\mathrm{motor}}^{\mathrm{TSDMD}}$: $1{,}0$ ($N_0=10$), $11$ ($N_0=100$), $16$ ($N_0=500$).}
 \end{frame}
-\grafico{Escalamiento a densidad inicial constante}{densidad_tiempo_computo.png}{$\rho_0=0{,}2\un{m^{-2}}$, $L=\sqrt{N_0/\rho_0}$ (de $5$ a $100\un{m}$); híbrido: $k=1$, $d^*=0{,}6\un{m}$.}
-\grafico{Escalamiento a tamaño de habitación constante}{lado_tiempo_computo.png}{$L=50\un{m}$; híbrido: $k=1$, $d^*=0{,}6\un{m}$.}
-\grafico{Costo relativo a TSDMD}{lado_costo_relativo.png}{Cociente $T_{\mathrm{motor}}/T_{\mathrm{motor}}^{\mathrm{TSDMD}}$ con el mismo $N_0$;\quad $L=50\un{m}$.}
+\grafico{Escalamiento a densidad inicial constante}{densidad_tiempo_computo.png}{}
+\grafico{Escalamiento a tamaño de habitación constante}{lado_tiempo_computo.png}{}
+\grafico{Costo relativo a TSDMD}{lado_costo_relativo.png}{}
 % No hay en esta carpeta animaciones ni curvas temporales de los extremos de
 % cada barrido. No presentar los tres videos base como si fueran esos estudios.
 
@@ -462,21 +451,13 @@ Se promedian los tiempos de las $M$ realizaciones de cada configuración.
 \section{Material de apoyo}
 % Fuera del recorrido oral de 13 minutos. Todas las figuras restantes disponibles.
 \grafico{Anticipación: fracción temporal TS}{barrido_fraccion_ts.png}{$N_0=500$, $L=50\un{m}$, $d^*=0{,}6\un{m}$.}
-\grafico{Cierre con 10 agentes: evacuación}{umbral_N10_evacuacion.png}{$N_0=10$, $L=50\un{m}$, $k=1$.}
 \grafico{Cierre con 10 agentes: cómputo}{umbral_N10_tiempo_computo.png}{$N_0=10$, $L=50\un{m}$, $k=1$.}
-\grafico{Cierre con 10 agentes: fracción TS}{umbral_N10_fraccion_ts.png}{$N_0=10$, $L=50\un{m}$, $k=1$.}
-\grafico{Cierre con 100 agentes: evacuación}{umbral_N100_evacuacion.png}{$N_0=100$, $L=50\un{m}$, $k=1$.}
 \grafico{Cierre con 100 agentes: cómputo}{umbral_N100_tiempo_computo.png}{$N_0=100$, $L=50\un{m}$, $k=1$.}
 \grafico{Cierre con 100 agentes: fracción TS}{umbral_N100_fraccion_ts.png}{$N_0=100$, $L=50\un{m}$, $k=1$.}
 \grafico{Cierre con 500 agentes: evacuación}{umbral_N500_evacuacion.png}{$N_0=500$, $L=50\un{m}$, $k=1$.}
 \grafico{Cierre con 500 agentes: cómputo}{umbral_N500_tiempo_computo.png}{$N_0=500$, $L=50\un{m}$, $k=1$.}
-\grafico{Cierre con 500 agentes: fracción TS}{umbral_N500_fraccion_ts.png}{$N_0=500$, $L=50\un{m}$, $k=1$.}
 \grafico{Densidad fija: evacuación}{densidad_evacuacion.png}{$\rho_0=0{,}2\un{m^{-2}}$, $L=\sqrt{N_0/\rho_0}$.}
-\grafico{Densidad fija: costo relativo}{densidad_costo_relativo.png}{$\rho_0=0{,}2\un{m^{-2}}$; cociente entre tiempos medios de motor.}
 \grafico{Habitación fija: evacuación}{lado_evacuacion.png}{$L=50\un{m}$; densidad inicial variable.}
-\grafico{TSDMD: realizaciones del caso base}{base_poblacion_tsdmd.png}{$N_0=500$, $L=50\un{m}$; diez realizaciones individuales.}
-\grafico{EDMD: realizaciones del caso base}{base_poblacion_edmd.png}{$N_0=500$, $L=50\un{m}$; diez realizaciones individuales.}
-\grafico{Híbrido: realizaciones del caso base}{base_poblacion_hybrid.png}{$N_0=500$, $L=50\un{m}$, $k=1$, $d^*=0{,}6\un{m}$; diez realizaciones individuales.}
 \fi
 \end{document}
 
