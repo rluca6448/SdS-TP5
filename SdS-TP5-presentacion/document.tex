@@ -392,10 +392,9 @@ $M=10$ realizaciones por configuración.
 \video{Evacuación TSDMD}{animaciones/fotogramas_tsdmd/tsdmd_t0030.00.png}{tsdmd.mp4}{https://youtu.be/SMY3F5_Luxw}
 \video{Evacuación EDMD}{animaciones/fotogramas_edmd/edmd_t0030.00.png}{edmd.mp4}{https://youtu.be/CZd1lrxaji0}
 \video{Evacuación híbrida}{animaciones/fotogramas_hybrid/hybrid_t0030.00.png}{hybrid.mp4}{https://youtu.be/-psuJtkw2a0}
+\grafico{Híbrido: fracción TS}{base_fraccion_ts.png}{}
 \grafico{Población: comparación de esquemas}{base_poblacion_comparacion.png}{}
-\grafico{Híbrido: fracción TS durante la evacuación}{base_fraccion_ts.png}{}
 \begin{frame}{Tiempos de evacuación y de cómputo}
-	\notaBreve{$N_0=500$; $M=10$}\par\vspace{1mm}
 	\begin{columns}[T,onlytextwidth]
 		\begin{column}{.48\textwidth}
 			\centering
@@ -412,10 +411,7 @@ $M=10$ realizaciones por configuración.
 	\medskip
 	\centering
 \end{frame}
-\grafico{Anticipación: tiempo de evacuación}{barrido_evacuacion.png}{}
-\grafico{Anticipación: tiempo de cómputo}{barrido_tiempo_computo.png}{}
-\grafico{Distancia de cierre: participación de TS}{umbral_comparacion_fraccion_ts.png}{}
-\begin{frame}{Distancia de cierre: evacuación y cómputo relativos al TSDMD}
+\begin{frame}{Radio de interacción: evacuación y cómputo relativos al TSDMD}
 	\begin{columns}[T,onlytextwidth]
 		\begin{column}{.48\textwidth}
 			\centering
@@ -428,37 +424,38 @@ $M=10$ realizaciones por configuración.
 			\includegraphics[width=\linewidth]{umbral_comparacion_costo_relativo.png}
 		\end{column}
 	\end{columns}
+	\par\medskip
+	\centering
+	\notaBreve{$T_{\mathrm{ev}}^{\mathrm{TSDMD}}\text{: }
+	33{,}2\un{s}$ ($N_0=10$), $55{,}9\un{s}$ ($N_0=100$)
+	y $232{,}3\un{s}$ ($N_0=500$).\\
+	$T_{\mathrm{motor}}^{\mathrm{TSDMD}}\text{: }
+	0{,}00084\un{s}$ ($N_0=10$), $0{,}022\un{s}$ ($N_0=100$)
+	y $0{,}80\un{s}$ ($N_0=500$).}
 \end{frame}
-\grafico{Escalamiento a densidad inicial constante}{densidad_tiempo_computo.png}{}
-\grafico{Escalamiento a tamaño de habitación constante}{lado_tiempo_computo.png}{}
-\grafico{Costo relativo a TSDMD}{lado_costo_relativo.png}{}
+\grafico{Radio de interacción: porcentaje de TS}{umbral_comparacion_fraccion_ts.png}{}
+\grafico{Escalamiento a densidad constante}{densidad_costo_relativo.png}{$L$ varía de $5$ a $100\un{m}$.}
+\grafico{Costo relativo a TSDMD con L constante}{lado_costo_relativo.png}{}
 % No hay en esta carpeta animaciones ni curvas temporales de los extremos de
 % cada barrido. No presentar los tres videos base como si fueran esos estudios.
 
 \section{Conclusiones}
 \begin{frame}{Conclusiones}
-\begin{itemize}\setlength{\itemsep}{9mm}
-\item Caso base: TSDMD e híbrido dan $232\pm2\un{s}$; EDMD, $336\pm3\un{s}$.
-\item El híbrido cuesta aproximadamente $1{,}3$ veces TSDMD; EDMD, $17$ veces.
-\item Aumentar $d^*$ incorpora más agentes a TS y aumenta el costo en $N_0=500$.
+\begin{itemize}\setlength{\itemsep}{5mm}
+\item \textbf{Evacuación.} El híbrido sigue de cerca la curva de población de
+  TSDMD. Ambos evacúan en $232\pm2\un{s}$ en el caso base. EDMD tarda un 45\,\% más.
+\item \textbf{Cambio de esquema.} Al principio predomina ED. Cuando se forma
+  la cola en la puerta, casi todos los agentes activos pasan a TS.
+\item \textbf{Radio de interacción.} Para $100$ y $500$ agentes, ampliar $d^*$
+  aumenta la fracción TS y el tiempo del motor. El tiempo de evacuación cambia poco.
+\item \textbf{Escalamiento.} Para el mayor $N_0$ de cada variante, el tiempo del
+  motor es $1{,}2$ a $1{,}3$ veces el de TSDMD con el híbrido y $17$ a $18$ veces con EDMD.
 \end{itemize}
-% Cifras de base_resumen.csv; barras son desviación entre realizaciones.
-% Cocientes descriptivos de medias, no ajuste ni test estadístico.
 \label{finprincipal}
 \end{frame}
 
 \ifincluirapoyo
 \apoyotrue
-\section{Material de apoyo}
-% Fuera del recorrido oral de 13 minutos. Todas las figuras restantes disponibles.
-\grafico{Anticipación: fracción temporal TS}{barrido_fraccion_ts.png}{$N_0=500$, $L=50\un{m}$, $d^*=0{,}6\un{m}$.}
-\grafico{Cierre con 10 agentes: cómputo}{umbral_N10_tiempo_computo.png}{$N_0=10$, $L=50\un{m}$, $k=1$.}
-\grafico{Cierre con 100 agentes: cómputo}{umbral_N100_tiempo_computo.png}{$N_0=100$, $L=50\un{m}$, $k=1$.}
-\grafico{Cierre con 100 agentes: fracción TS}{umbral_N100_fraccion_ts.png}{$N_0=100$, $L=50\un{m}$, $k=1$.}
-\grafico{Cierre con 500 agentes: evacuación}{umbral_N500_evacuacion.png}{$N_0=500$, $L=50\un{m}$, $k=1$.}
-\grafico{Cierre con 500 agentes: cómputo}{umbral_N500_tiempo_computo.png}{$N_0=500$, $L=50\un{m}$, $k=1$.}
-\grafico{Densidad fija: evacuación}{densidad_evacuacion.png}{$\rho_0=0{,}2\un{m^{-2}}$, $L=\sqrt{N_0/\rho_0}$.}
-\grafico{Habitación fija: evacuación}{lado_evacuacion.png}{$L=50\un{m}$; densidad inicial variable.}
 \fi
 \end{document}
 
